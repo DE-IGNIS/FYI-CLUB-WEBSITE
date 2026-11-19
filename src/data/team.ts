@@ -21,7 +21,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     badge: "EXECUTIVE 01",
     socialLinks: {
       linkedin: "https://linkedin.com",
-      github: "https://github.com/fyi-vitbhopal",
+      github: "https://github.com/fyiclub-vitb",
     }
   },
   {
@@ -40,7 +40,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     badge: "EXECUTIVE 02",
     socialLinks: {
       linkedin: "https://linkedin.com",
-      github: "https://github.com/fyi-vitbhopal",
+      github: "https://github.com/fyiclub-vitb",
     }
   },
 
@@ -60,7 +60,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     handle: "@kabir_tech",
     badge: "TECH WING 01",
     socialLinks: {
-      github: "https://github.com/fyi-vitbhopal",
+      github: "https://github.com/fyiclub-vitb",
       linkedin: "https://linkedin.com",
     }
   },
@@ -79,7 +79,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     handle: "@devanshi_firmware",
     badge: "TECH WING 02",
     socialLinks: {
-      github: "https://github.com/fyi-vitbhopal",
+      github: "https://github.com/fyiclub-vitb",
     }
   },
 

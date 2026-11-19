@@ -126,7 +126,7 @@ export const ProjectsPage: React.FC = () => {
                   {/* Action buttons */}
                   <div className="flex flex-wrap items-center gap-3">
                     <a
-                      href={proj.repoUrl || 'https://github.com/fyi-vitbhopal'}
+                      href={proj.repoUrl || 'https://github.com/fyiclub-vitb'}
                       target="_blank"
                       rel="noreferrer"
                       className="magnetic-btn btn-elastic inline-flex items-center gap-2 bg-primary text-white hover:bg-brand-orange font-mono text-xs font-black px-5 py-2.5 rounded border-2 border-primary brutal-shadow uppercase tracking-wider"

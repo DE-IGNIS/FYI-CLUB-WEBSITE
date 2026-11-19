@@ -10,10 +10,10 @@ export const Navbar: React.FC = () => {
   const navItems = [
     { label: 'Home', path: '/' },
     { label: 'About', path: '/about' },
-    { label: 'Work', path: '/projects' },
+    { label: 'Projects', path: '/projects' },
     { label: 'Events', path: '/events' },
-    { label: 'Guild', path: '/team' },
-    { label: 'Archive', path: '/gallery' },
+    { label: 'Team', path: '/team' },
+    { label: 'Gallery', path: '/gallery' },
   ];
 
   return (

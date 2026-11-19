@@ -7,12 +7,12 @@ const DEFAULT_DESCRIPTION = 'Discover FYI Club at VIT Bhopal, the Fraternity of 
 
 const PAGE_METADATA: Record<string, { title: string; description: string }> = {
   '/': { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION },
-  '/about': { title: 'About FYI Club | VIT Bhopal', description: 'Learn about FYI Club, the Fraternity of Young Innovators at VIT Bhopal, and our student-led approach to technology and innovation.' },
-  '/projects': { title: 'Student Projects | FYI Club VIT Bhopal', description: 'Explore software, hardware, and creative technology projects built by students in FYI Club at VIT Bhopal.' },
-  '/events': { title: 'Events and Workshops | FYI Club VIT Bhopal', description: 'Find workshops, meetups, and upcoming events hosted by FYI Club at VIT Bhopal.' },
-  '/team': { title: 'Our Team | FYI Club VIT Bhopal', description: 'Meet the student team behind FYI Club, the Fraternity of Young Innovators at VIT Bhopal.' },
-  '/gallery': { title: 'Gallery | FYI Club VIT Bhopal', description: 'See moments from FYI Club projects, workshops, events, and campus activities at VIT Bhopal.' },
-  '/join': { title: 'Join FYI Club | VIT Bhopal', description: 'Join the Fraternity of Young Innovators at VIT Bhopal and build practical software and hardware projects with students.' },
+  '/about': { title: 'About FYI Club | VIT Bhopal', description: 'Meet FYI Club, the Fraternity of Young Innovators: the student-run technology and innovation club at VIT Bhopal University.' },
+  '/projects': { title: 'Student Projects | FYI Club VIT Bhopal', description: 'Explore student software, hardware, robotics, and creative technology projects from FYI Club at VIT Bhopal University.' },
+  '/events': { title: 'Events and Workshops | FYI Club VIT Bhopal', description: 'Discover technology workshops, student meetups, and campus events hosted by FYI Club at VIT Bhopal University.' },
+  '/team': { title: 'FYI Club Team | VIT Bhopal', description: 'Meet the student team behind FYI Club, the Fraternity of Young Innovators at VIT Bhopal University.' },
+  '/gallery': { title: 'FYI Club Gallery | VIT Bhopal', description: 'View photos from FYI Club workshops, student projects, events, and campus activities at VIT Bhopal University.' },
+  '/join': { title: 'Join FYI Club | VIT Bhopal', description: 'Join FYI Club at VIT Bhopal University to collaborate with students on practical software, hardware, and technology projects.' },
 };
 
 function setMeta(name: string, content: string, property = false) {
