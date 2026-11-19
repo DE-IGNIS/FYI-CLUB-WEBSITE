@@ -18,11 +18,11 @@ export const CLUB_META = {
   status: "STATUS: BUILDING WEIRD & USEFUL THINGS ⚡",
   email: "chapter@fyi-vitbhopal.tech",
   heroSubtitle: "While campus sleeps, we compile.",
-  narrative: "An official student-run technical and innovation chapter under the Dean of Student Welfare (DSW) at VIT Bhopal University. Founded to bring together curious student minds obsessed with writing real code, soldering physical hardware, and shipping working prototypes.",
+  narrative: "FYI Club (Fraternity of Young Innovators) is the official student-run technology and innovation club at VIT Bhopal University, under the Dean of Student Welfare (DSW). We bring students together to build software, solder hardware, and ship working prototypes.",
   socials: {
     instagram: "https://www.instagram.com/fyivitbhopal/",
     linkedin: "https://www.linkedin.com/company/fyiclub",
-    github: "https://github.com/fyi-vitbhopal",
+    github: "https://github.com/fyiclub-vitb",
     discord: "https://discord.gg/fyivitbhopal",
     email: "mailto:chapter@fyi-vitbhopal.tech",
   },

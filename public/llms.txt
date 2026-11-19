@@ -1,0 +1,22 @@
+# FYI Club VIT Bhopal
+
+> FYI Club, the Fraternity of Young Innovators, is the student-run technology and innovation club at VIT Bhopal University.
+
+The club brings students together to build software, hardware, robotics, and other working prototypes. The chapter is based at VIT Bhopal University in Madhya Pradesh, India.
+
+## Website
+
+- [Home](https://fyiclubvitbpl.web.app/): Overview of FYI Club, student projects, activities, events, and membership.
+- [About](https://fyiclubvitbpl.web.app/about): Club background, mission, and campus information.
+- [Projects](https://fyiclubvitbpl.web.app/projects): Student software and hardware project archive.
+- [Events](https://fyiclubvitbpl.web.app/events): Club workshops, meetups, and events.
+- [Team](https://fyiclubvitbpl.web.app/team): Student club team.
+- [Gallery](https://fyiclubvitbpl.web.app/gallery): Photos from club activities.
+- [Join](https://fyiclubvitbpl.web.app/join): Membership information.
+
+## Official profiles
+
+- [Instagram](https://www.instagram.com/fyivitbhopal/)
+- [LinkedIn](https://www.linkedin.com/company/fyiclub)
+- [GitHub](https://github.com/fyiclub-vitb)
+- [Sitemap](https://fyiclubvitbpl.web.app/sitemap.xml)

@@ -16,7 +16,7 @@ export const PROJECTS: Project[] = [
     ],
     image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
     version: "V1.4 • [DUMMY PROTOTYPE]",
-    repoUrl: "https://github.com/fyi-vitbhopal"
+    repoUrl: "https://github.com/fyiclub-vitb"
   },
   {
     id: "neurocanvas",
