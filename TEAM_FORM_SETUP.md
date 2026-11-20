@@ -27,10 +27,9 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
    ```
 
 4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
-5. Run `initializeWebsiteAdminOwner` once. It adds or marks the account from `INITIAL_ADMIN_EMAIL` as the primary FYI owner in Firestore `adminUsers`. Re-run it once if that owner account was initialized before the `isPrimaryOwner` flag was added.
-6. Run `initializeFreeAdminQueue`. It installs the response-sheet trigger and publishes existing form responses to Firestore. Re-running it is safe; the latest response per email becomes that person's public profile. To retry later, run `syncExistingResponseRows` and check the execution log for published and failed row counts.
-7. Deploy the current Firestore rules so only the primary FYI owner can manage admins while every listed admin can edit team profiles: `firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl`.
-8. Open `https://<your-site>/admin` and sign in with the official owner Google account.
+5. Run `setupTeamProfilePublishing` once. It adds or marks the account from `INITIAL_ADMIN_EMAIL` as the primary FYI owner, installs the response-sheet trigger, and publishes existing responses. If the official owner was already initialized, it marks that account as primary. Re-running setup is safe and republishes existing rows.
+6. Deploy the current Firestore rules so only the primary FYI owner can manage admins while every listed admin can edit team profiles: `firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl`.
+7. Open `https://<your-site>/admin` and sign in with the official owner Google account.
 
 ## Form requirements
 
