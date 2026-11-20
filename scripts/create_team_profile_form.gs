@@ -1,9 +1,6 @@
 /** Installable response-spreadsheet submit trigger. */
 function onTeamProfileSubmit(e) {
   if (!e || (!e.response && !e.namedValues)) throw new Error('Use the installed Form response-sheet trigger.');
-  const props = PropertiesService.getScriptProperties();
-  const sheetId = props.getProperty('TEAM_ADMIN_SHEET_ID');
-  if (!sheetId) throw new Error('Run setupTeamProfilePublishing first.');
 
   const answers = {};
   if (e.response) {
@@ -40,8 +37,6 @@ function onTeamProfileSubmit(e) {
   DriveApp.getFileById(fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   const submittedAt = String(answer('Timestamp') || (e.values && e.values[0]) || new Date().toISOString());
   const responseId = e.response ? e.response.getId() : Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, submittedAt + '|' + verifiedEmail));
-  const ss = SpreadsheetApp.openById(sheetId);
-  const queue = ss.getSheetByName('Submissions');
   const name = String(answer('Full name') || '').trim();
   const specialty = String(answer('Specialty') || '').trim();
   const quote = String(answer('Quote for your profile') || '').trim();
@@ -72,65 +67,29 @@ function onTeamProfileSubmit(e) {
   publishTeamMemberToFirestore_(profile, publishedAt);
   const firestoreCreated = upsertFirestoreSubmission_(profile);
   if (firestoreCreated) appendFirestoreAudit_('profile_auto_published', memberId, name, {status: 'published', submissionId});
-
-  let alreadyQueued = false;
-  if (queue.getLastRow() > 1) {
-    const responseIds = queue.getRange(2, 2, queue.getLastRow() - 1, 1).getDisplayValues().flat();
-    const existingRow = responseIds.indexOf(responseId);
-    alreadyQueued = existingRow !== -1;
-    if (alreadyQueued) {
-      const rowNumber = existingRow + 2;
-      const headers = queue.getRange(1, 1, 1, queue.getLastColumn()).getDisplayValues()[0];
-      const updateQueueCell = (header, value) => {
-        const column = headers.indexOf(header);
-        if (column !== -1) queue.getRange(rowNumber, column + 1).setValue(value);
-      };
-      updateQueueCell('Website Review Status', 'Published');
-      updateQueueCell('Reviewed At', new Date(publishedAt));
-      updateQueueCell('Reviewed By', 'Automatic form publish');
-      updateQueueCell('Sync Error', '');
-    }
-  }
-  if (alreadyQueued) return true;
-  const rowByHeader = {
-    'Submitted At': new Date(submittedAt), 'Response ID': responseId,
-    'Private Email': verifiedEmail, 'Full Name': name, Position: position,
-    'Department / Team': team, Specialty: specialty, Quote: quote, Handle: handle,
-    LinkedIn: linkedin, 'Photo Drive ID': fileId, 'Website Review Status': 'Published',
-    'Reviewed At': new Date(publishedAt), 'Reviewed By': 'Automatic form publish', 'Sync Error': ''
-  };
-  const queueHeaders = queue.getRange(1, 1, 1, queue.getLastColumn()).getDisplayValues()[0];
-  queue.appendRow(queueHeaders.map((header) => Object.prototype.hasOwnProperty.call(rowByHeader, header) ? rowByHeader[header] : ''));
-  appendAudit_(ss, 'profile_auto_published', responseId, verifiedEmail, 'Automatic form publish');
   return true;
 }
 
 /** One-time setup: register the official owner, install the trigger, and publish existing responses. */
 function setupTeamProfilePublishing() {
   initializeWebsiteAdminOwner_();
-  initializeFreeAdminQueue_();
+  installTeamProfileTrigger_();
 }
 
-function initializeFreeAdminQueue_() {
+function installTeamProfileTrigger_() {
   const props = PropertiesService.getScriptProperties();
-  const existingId = props.getProperty('TEAM_ADMIN_SHEET_ID');
-  const ss = existingId ? SpreadsheetApp.openById(existingId) : SpreadsheetApp.create('FYI Team Profile Admin Queue');
-  let queue = ss.getSheetByName('Submissions');
-  if (!queue) queue = ss.getSheets()[0].setName('Submissions');
-  if (queue.getLastRow() === 0) queue.appendRow(['Submitted At','Response ID','Private Email','Full Name','Position','Department / Team','Specialty','Quote','Handle','LinkedIn','Photo Drive ID','Website Review Status','Reviewed At','Reviewed By','Sync Error']);
-  let audit = ss.getSheetByName('Audit Log');
-  if (!audit) audit = ss.insertSheet('Audit Log');
-  if (audit.getLastRow() === 0) audit.appendRow(['Time','Action','Response ID','Member','Actor']);
-  props.setProperty('TEAM_ADMIN_SHEET_ID', ss.getId());
+  const formId = props.getProperty('TEAM_FORM_ID');
+  if (!formId) throw new Error('Set TEAM_FORM_ID in Script Properties first.');
+  // The secondary review queue has been retired; keep its old spreadsheet as an archive.
+  props.deleteProperty('TEAM_ADMIN_SHEET_ID');
   // Replace old submit and spreadsheet-approval triggers. Valid responses publish directly.
   ScriptApp.getProjectTriggers()
     .filter(t => ['onTeamProfileSubmit', 'onEditTeamQueue'].includes(t.getHandlerFunction()))
     .forEach(t => ScriptApp.deleteTrigger(t));
-  const form = FormApp.openById(PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID'));
+  const form = FormApp.openById(formId);
   const responseSheetId = form.getDestinationId();
   if (!responseSheetId) throw new Error('Link the Google Form to its response spreadsheet first.');
   ScriptApp.newTrigger('onTeamProfileSubmit').forSpreadsheet(responseSheetId).onFormSubmit().create();
-  Logger.log('Private admin queue: ' + ss.getUrl());
   Logger.log('Form response spreadsheet: ' + SpreadsheetApp.openById(responseSheetId).getUrl());
   // Also publish responses submitted before this trigger was installed. This
   // is safe to repeat: response and member IDs are stable, so latest data wins.
@@ -195,11 +154,6 @@ function syncExistingResponseRows_() {
   if (!responseSheetId) throw new Error('Link the Google Form to its response spreadsheet first.');
   const spreadsheet = SpreadsheetApp.openById(responseSheetId);
   const responseTab = findFormResponseSheet_(spreadsheet);
-  const queueId = PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID');
-  if (!queueId) throw new Error('Run setupTeamProfilePublishing first.');
-  const queueSpreadsheet = SpreadsheetApp.openById(queueId);
-  const queue = queueSpreadsheet.getSheetByName('Submissions');
-  if (!queue) throw new Error('The private queue has no Submissions sheet. Run setupTeamProfilePublishing again.');
   const rows = responseTab.getDataRange().getDisplayValues();
   if (rows.length < 2) { Logger.log('No existing response rows to sync.'); return; }
   const headers = rows[0];
@@ -217,7 +171,7 @@ function syncExistingResponseRows_() {
       Logger.log('FAILED response row ' + (rowIndex + 1) + ' (' + (values[0] || 'no timestamp') + '): ' + (err && err.stack ? err.stack : err));
     }
   }
-  Logger.log('Backfill complete. Published responses: ' + published + '; failed rows: ' + skippedOrFailed + '; response tab: ' + responseTab.getName() + '; queue rows: ' + Math.max(0, queue.getLastRow() - 1));
+  Logger.log('Backfill complete. Published responses: ' + published + '; failed rows: ' + skippedOrFailed + '; response tab: ' + responseTab.getName());
 }
 
 function findFormResponseSheet_(spreadsheet) {
@@ -310,8 +264,4 @@ function firestoreValue_(v) {
   if (typeof v==='boolean') return {booleanValue:v};
   if (typeof v==='object'&&v!==null) return {mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,x])=>[k,firestoreValue_(x)]))}};
   return {stringValue:String(v==null?'':v)};
-}
-
-function appendAudit_(ss, action, id, member, actor) {
-  ss.getSheetByName('Audit Log').appendRow([new Date(),action,id,member,actor||Session.getEffectiveUser().getEmail()||'system']);
 }

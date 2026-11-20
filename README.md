@@ -41,7 +41,7 @@ Set `VITE_RECAPTCHA_SITE_KEY` alongside the Firebase web app values in `.env`. R
 
 The Google Form response spreadsheet is the intake source. Its installed Apps Script trigger validates each response and immediately publishes the profile to the public Firestore `teamMembers` collection; no admin approval is required. The script also stores a private response record in `teamSubmissions` and writes an audit entry. Submitted profile photos are made viewable to anyone with the Drive link so the website can load them. The Apps Script project is separate from this Git repository, so pushing code does not update that project automatically.
 
-Copy `scripts/create_team_profile_form.gs` into the Apps Script project attached to the form and save it. Set `TEAM_FORM_ID` and `INITIAL_ADMIN_EMAIL` in that project's Script Properties. `TEAM_ADMIN_SHEET_ID` is created and saved automatically by `setupTeamProfilePublishing`; leave its value there after setup. The script's verified Google-collected account is the identity used for the submission and must be a VIT Bhopal account; a separate typed email answer is ignored if it differs. Keep the owner address in Script Properties, never in this repository.
+Copy `scripts/create_team_profile_form.gs` into the Apps Script project attached to the form and save it. Set `TEAM_FORM_ID` and `INITIAL_ADMIN_EMAIL` in that project's Script Properties. The script's verified Google-collected account is the identity used for the submission and must be a VIT Bhopal account; a separate typed email answer is ignored if it differs. Keep the owner address in Script Properties, never in this repository.
 
 #### Apps Script functions
 

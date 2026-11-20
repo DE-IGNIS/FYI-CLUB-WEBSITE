@@ -5,7 +5,7 @@
 1. A respondent submits the Google Form. The linked response spreadsheet receives the response.
 2. An installed Apps Script form-submit trigger validates the Google-collected VIT Bhopal email, maps the answers, and publishes the profile to Firestore `teamMembers`.
 3. The website reads published `teamMembers` records and shows them on the homepage and Team page. No admin approval is part of this flow.
-4. The script also stores the private response in `teamSubmissions`, writes an audit entry, and records the response in a tracking sheet.
+4. The script also stores the private response in `teamSubmissions` and writes an audit entry. The linked Form response spreadsheet is the source of truth; a separate review queue is not used.
 
 The member document ID is derived from the verified email. A new response can create or update that email's own profile; it does not select another member's document. Since publication is automatic, **restrict the Google Form to current FYI members**. A VIT Bhopal email alone is the script's identity check, not proof of club membership. Form answers, LinkedIn links, and the photo become public on the website. Each submitted photo is shared as **Anyone with the link — Viewer**; the Drive folder stays private.
 
@@ -15,7 +15,6 @@ The member document ID is derived from the verified email. A new response can cr
 2. In **Project Settings → Script Properties**, set:
    - `TEAM_FORM_ID`: the ID from the Google Form URL.
    - `INITIAL_ADMIN_EMAIL`: the official FYI owner's VIT Bhopal email.
-   - `TEAM_ADMIN_SHEET_ID` is created and stored automatically during setup. Do not enter it manually.
 3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. Merge these scopes into its existing `oauthScopes` list:
 
    ```json
@@ -31,7 +30,7 @@ The member document ID is derived from the verified email. A new response can cr
    ```
 
 4. Ensure the Google account that owns the trigger has Firestore data access in the Firebase project's Google Cloud IAM.
-5. Run **`setupTeamProfilePublishing`** once from the Apps Script editor and grant the requested permissions. It marks the primary owner, creates the tracking sheet if needed, installs the form-submit trigger, and publishes existing response rows. Run it again only to reinstall setup or retry/backfill rows.
+5. Run **`setupTeamProfilePublishing`** once from the Apps Script editor and grant the requested permissions. It marks the primary owner, installs the form-submit trigger, and publishes existing response rows. Run it again only to reinstall setup or retry/backfill rows.
 6. Deploy Firestore rules to enforce the admin roles:
 
    ```sh
@@ -41,6 +40,8 @@ The member document ID is derived from the verified email. A new response can cr
 7. Open `/admin` and sign in as the official owner.
 
 Saving this repository or pushing to GitHub does **not** update the separate Apps Script project. Paste and save the script there. Website hosting and Firestore rules also deploy separately; the GitHub workflow deploys hosting, while the command above deploys rules.
+
+The old `FYI Team Profile Admin Queue` spreadsheet, if one already exists, is no longer read or updated. Its status, review, and sync columns are historical and can be archived; the setup script leaves that spreadsheet untouched. The original Google Form response spreadsheet remains active.
 
 ## Who can edit what
 
