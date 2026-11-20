@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { submitJoinApplication } from '../../lib/firebase';
 import type { JoinApplication } from '../../types';
-import { CURRENT_COHORT, getAdmissionEmailPlaceholder } from '../../data/clubData';
+import { CURRENT_COHORT, VIT_EMAIL_PLACEHOLDER } from '../../data/clubData';
 
 interface JoinModalProps {
   isOpen: boolean;
@@ -46,7 +46,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({ isOpen, onClose, prefilled
       setSubmittedStatus({ id: res.id, source: res.source });
     } catch (err) {
       console.error(err);
-      alert('Error submitting application. Please try again or email chapter@fyi-vitbhopal.tech directly.');
+      alert('Error submitting application. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +125,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({ isOpen, onClose, prefilled
                   <input
                     type="email"
                     required
-                    placeholder={getAdmissionEmailPlaceholder('name')}
+                    placeholder={VIT_EMAIL_PLACEHOLDER}
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-white border-2 border-primary p-2.5 font-mono text-sm focus:outline-none focus:border-brand-orange"

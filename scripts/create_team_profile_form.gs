@@ -24,7 +24,7 @@ function onTeamProfileSubmit(e) {
   const verifiedEmail = String(collectedEmail || '').trim().toLowerCase();
   const enteredEmail = String(answer('VIT Bhopal email') || '').trim().toLowerCase();
   if (!/^[^\s@]+@vitbhopal\.ac\.in$/.test(verifiedEmail)) {
-    throw new Error('No automatically collected VIT Bhopal email was found. Set Google Forms email collection to verified email and submit while signed in with your @vitbhopal.ac.in account.');
+    throw new Error('No automatically collected VIT Bhopal account was found. Set Google Forms email collection to verified email and submit while signed in with your VIT Bhopal account.');
   }
   // The Google-collected address is authoritative. The separate text answer is
   // redundant and must not block a valid submission if it contains a typo.
@@ -108,7 +108,11 @@ function initializeFreeAdminQueue() {
 
 /** One-time bootstrap for the initial website owner. Run from the trusted Apps Script project. */
 function initializeWebsiteAdminOwner() {
-  const email = 'sumit.24bce11520@vitbhopal.ac.in';
+  const email = String(PropertiesService.getScriptProperties().getProperty('INITIAL_ADMIN_EMAIL') || '').trim().toLowerCase();
+  if (!email) throw new Error('Set INITIAL_ADMIN_EMAIL in Script Properties first.');
+  if (!/^[^\s@]+@vitbhopal\.ac\.in$/.test(email)) {
+    throw new Error('INITIAL_ADMIN_EMAIL must be a VIT Bhopal address.');
+  }
   const url = firestoreDocumentUrl_('adminUsers/' + encodeURIComponent(email));
   const existing = UrlFetchApp.fetch(url, {
     method: 'get', headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}, muteHttpExceptions: true
@@ -116,10 +120,10 @@ function initializeWebsiteAdminOwner() {
   if (existing.getResponseCode() === 200) {
     const current = JSON.parse(existing.getContentText());
     if (current.fields && current.fields.role && current.fields.role.stringValue === 'owner') {
-      Logger.log('Initial website owner is already registered: ' + email);
+      Logger.log('Initial website owner is already registered.');
       return;
     }
-    throw new Error('An admin record already exists for ' + email + ' but it is not an owner. Ask a Firebase project owner to review it.');
+    throw new Error('An admin record already exists for INITIAL_ADMIN_EMAIL but it is not an owner. Ask a Firebase project owner to review it.');
   }
   if (existing.getResponseCode() !== 404) throw new Error('Admin lookup failed: ' + existing.getContentText());
   const fields = Object.fromEntries(Object.entries({
@@ -135,7 +139,7 @@ function initializeWebsiteAdminOwner() {
     throw new Error('Could not register initial owner: ' + created.getContentText());
   }
   appendFirestoreAudit_('admin_owner_initialized', email, email, {role: 'owner'});
-  Logger.log('Initial website owner added: ' + email);
+  Logger.log('Initial website owner added.');
 }
 
 /** One-time backfill for submissions already present in the linked Form response spreadsheet. */

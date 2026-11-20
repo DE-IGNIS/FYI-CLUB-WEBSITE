@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { CLUB_META, getCopyrightNotice } from '../../data/clubData';
 import logoUrl from '../../assets/fyi-logo.jpg';
 
-// Shared footer links and contact details come from the central club metadata.
+// Shared footer links and social channels come from the central club metadata.
 export const Footer: React.FC = () => {
   return (
     <footer className="w-full bg-[#EBE7DC] border-t-4 border-primary pt-16 pb-12">
@@ -18,12 +18,14 @@ export const Footer: React.FC = () => {
             </h2>
           </div>
           <div className="flex flex-col items-start md:items-end">
-            <span className="font-mono text-xs uppercase font-bold text-brand-muted">DIRECT COMMS</span>
+            <span className="font-mono text-xs uppercase font-bold text-brand-muted">OFFICIAL CHANNELS</span>
             <a
-              href={`mailto:${CLUB_META.email}`}
+              href={CLUB_META.socials.instagram}
+              target="_blank"
+              rel="noreferrer"
               className="font-headline text-lg sm:text-xl font-black text-primary hover:text-brand-orange underline decoration-2 underline-offset-4"
             >
-              {CLUB_META.email}
+              Instagram @fyivitbhopal
             </a>
           </div>
         </div>

@@ -4,10 +4,9 @@
 // ============================================================================
 export const CURRENT_YEAR = new Date().getFullYear();
 export const CURRENT_COHORT = `COHORT ${CURRENT_YEAR}`;
-export const ADMISSION_EMAIL_YEAR = CURRENT_YEAR - 1;
 
 export const getCopyrightNotice = () => `© ${CURRENT_YEAR} FYI VIT BHOPAL.`;
-export const getAdmissionEmailPlaceholder = (prefix = 'first') => `${prefix}.${ADMISSION_EMAIL_YEAR}@vitbhopal.ac.in`;
+export const VIT_EMAIL_PLACEHOLDER = 'Enter your VIT Bhopal email';
 
 export const CLUB_META = {
   name: "FYI BHOPAL",
@@ -16,7 +15,6 @@ export const CLUB_META = {
   domain: "https://fyiclubvitbpl.web.app",
   established: "EST. 2024",
   status: "STATUS: BUILDING WEIRD & USEFUL THINGS ⚡",
-  email: "chapter@fyi-vitbhopal.tech",
   heroSubtitle: "While campus sleeps, we compile.",
   narrative: "FYI Club (Fraternity of Young Innovators) is the official student-run technology and innovation club at VIT Bhopal University, under the Dean of Student Welfare (DSW). We bring students together to build software, solder hardware, and ship working prototypes.",
   socials: {
@@ -24,7 +22,6 @@ export const CLUB_META = {
     linkedin: "https://www.linkedin.com/company/fyiclub",
     github: "https://github.com/fyiclub-vitb",
     discord: "https://discord.gg/fyivitbhopal",
-    email: "mailto:chapter@fyi-vitbhopal.tech",
   },
   // Genuine, verified club telemetry (no synthetic stats)
   metrics: [
