@@ -42,9 +42,8 @@ type Submission = {
   socialLinks?: { linkedin?: string };
   photoDriveId?: string;
   photoUrl?: string;
-  status?: 'pending' | 'approved' | 'rejected';
+  status?: 'published' | 'approved' | 'pending' | 'rejected';
   submittedAt?: string;
-  reviewedAt?: { toDate?: () => Date };
 };
 type AuditEntry = { id: string; action?: string; actorEmail?: string; actorUid?: string; targetName?: string; targetId?: string; durationSeconds?: number; occurredAt?: { toDate?: () => Date }; before?: unknown; after?: unknown };
 type TeamMemberDraft = Pick<TeamMember, 'name' | 'position' | 'department' | 'specialty' | 'quote' | 'handle'> & {
@@ -213,7 +212,7 @@ export const AdminPage: React.FC = () => {
     if (access !== 'allowed' || !submissions.length || !teamMembers.length) return;
     const publishedById = new Map(teamMembers.map((member) => [member.id, member]));
     const updates = submissions.flatMap((submission) => {
-      if (submission.status !== 'approved' || !submission.memberId || !submission.photoDriveId) return [];
+      if (!['published', 'approved'].includes(submission.status || '') || !submission.memberId || !submission.photoDriveId) return [];
       const published = publishedById.get(submission.memberId);
       const photoUrl = getTeamPhotoUrl(submission.photoUrl, submission.photoDriveId);
       if (!published || published.photoUrl || !photoUrl || photoMigrations.current.has(submission.memberId)) return [];
@@ -228,7 +227,7 @@ export const AdminPage: React.FC = () => {
     });
     void batch.commit().catch(() => {
       updates.forEach(({ memberId }) => photoMigrations.current.delete(memberId));
-      setMessage('Could not update photos for previously approved profiles. Check Firestore rules and Drive sharing.');
+      setMessage('Could not update photos for previously published profiles. Check Firestore rules and Drive sharing.');
     });
   }, [access, submissions, teamMembers]);
 
@@ -440,7 +439,7 @@ export const AdminPage: React.FC = () => {
             {submissions.map((item) => <article key={item.id} className={panel}>
               <div className="flex flex-wrap justify-between gap-3 border-b border-[#111111]/20 pb-3 mb-4">
                 <div><h3 className="text-xl font-black uppercase">{item.name || 'Unnamed submission'}</h3><p className="text-xs mt-1">{item.department || item.team || 'No team'} · {item.position || 'No position'}</p></div>
-                <span className="text-xs font-bold uppercase text-[#FF4800]">{item.status === 'approved' ? 'Published' : item.status || 'unknown'}</span>
+                <span className="text-xs font-bold uppercase text-[#FF4800]">{['published', 'approved'].includes(item.status || '') ? 'Published' : item.status || 'unknown'}</span>
               </div>
               <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div><dt className={label}>Verified email · private</dt><dd className="break-all">{item.email || '—'}</dd></div>

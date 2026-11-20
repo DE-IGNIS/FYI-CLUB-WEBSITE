@@ -65,23 +65,6 @@ export interface TeamMember {
   };
 }
 
-export interface TeamSubmission {
-  id: string;
-  email: string;
-  name: string;
-  department: TeamMember['department'];
-  position: TeamMember['position'];
-  specialty: string;
-  quote: string;
-  handle: string;
-  socialLinks: {
-    linkedin?: string;
-  };
-  photoUrl?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt?: string;
-}
-
 export interface FaqItem {
   id: string;
   question: string;
