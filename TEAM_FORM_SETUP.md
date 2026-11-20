@@ -27,7 +27,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 
 4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
 5. Run `initializeWebsiteAdminOwner` once. It adds `sumit.24bce11520@vitbhopal.ac.in` as the initial owner in Firestore `adminUsers`.
-6. Run `initializeFreeAdminQueue`, then `syncExistingResponseRows` once to send current response rows into Firestore. New submissions sync automatically through the response-sheet trigger installed by initialization.
+6. Run `initializeFreeAdminQueue`. It installs the response-sheet trigger and automatically imports existing form responses into Firestore. Re-running it is safe and retries existing rows without resetting an approval. To retry later, run `syncExistingResponseRows` and check the execution log for the imported count and any failed response row details.
 7. Open `https://<your-site>/admin` and sign in with the owner Google account.
 
 ## Form requirements
