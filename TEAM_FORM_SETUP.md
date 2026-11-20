@@ -22,7 +22,8 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
      "https://www.googleapis.com/auth/script.external_request",
      "https://www.googleapis.com/auth/script.scriptapp",
      "https://www.googleapis.com/auth/datastore",
-     "https://www.googleapis.com/auth/cloud-platform"
+     "https://www.googleapis.com/auth/cloud-platform",
+     "https://www.googleapis.com/auth/userinfo.email"
    ]
    ```
 
