@@ -1,23 +1,24 @@
-# FYI Team Form and Website Approval Setup
+# FYI Team Form and Automatic Website Publishing
 
 Keep real form IDs, admin emails, and credentials out of this file and out of Git.
 
 ## Free Spark workflow
 
-Google Forms collects the profile update and stores the uploaded photo privately in Drive. Apps Script checks the verified respondent email, then writes a private pending record to Firestore `teamSubmissions`. The website's `/admin` page signs in with Google and lets a registered admin approve or reject the request. Approval writes public profile fields to `teamMembers`; the verified email and Drive photo ID stay in the private submission. Rejections and approvals appear in the website audit log. The response spreadsheet remains an intake backup and cannot publish profiles.
+Google Forms collects each profile and stores its uploaded photo in Drive. The installed Apps Script trigger checks the verified respondent email, makes the photo link-viewable, and publishes the profile to public Firestore `teamMembers` immediately. It also records the private response in `teamSubmissions`, writes a tracking row, and adds an audit entry. The `/admin` page monitors the data; it does not approve submissions. Each new response for the same verified email updates that member's existing public profile.
 
 This workflow uses Firebase Authentication, Firestore, Apps Script, and Google Drive; it does not require Cloud Functions, Secret Manager, or a billing account.
 
 ## Apps Script setup
 
 1. In Apps Script, paste the current `scripts/create_team_profile_form.gs` into the project attached to the form. Save it.
-2. In **Project Settings → Script Properties**, keep `TEAM_FORM_ID` set to the existing form ID and `TEAM_ADMIN_SHEET_ID` set to the private queue sheet ID already created for the form. Set `INITIAL_ADMIN_EMAIL` to the first owner's VIT Bhopal account. Keep the email value in Script Properties, not in Git or source code.
+2. In **Project Settings → Script Properties**, set `TEAM_FORM_ID` to the existing form ID and `INITIAL_ADMIN_EMAIL` to the first owner's VIT Bhopal account. `TEAM_ADMIN_SHEET_ID` is created and saved automatically by `initializeFreeAdminQueue`; do not create or enter it manually. Keep the email value in Script Properties, not in Git or source code.
 3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. In the manifest's `oauthScopes`, merge these scopes with any existing entries:
 
    ```json
    [
      "https://www.googleapis.com/auth/forms",
      "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
      "https://www.googleapis.com/auth/script.external_request",
      "https://www.googleapis.com/auth/script.scriptapp",
      "https://www.googleapis.com/auth/datastore",
@@ -27,7 +28,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 
 4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
 5. Run `initializeWebsiteAdminOwner` once. It adds the account from `INITIAL_ADMIN_EMAIL` as the initial owner in Firestore `adminUsers`.
-6. Run `initializeFreeAdminQueue`. It installs the response-sheet trigger and automatically imports existing form responses into Firestore. Re-running it is safe and retries existing rows without resetting an approval. To retry later, run `syncExistingResponseRows` and check the execution log for the imported count and any failed response row details.
+6. Run `initializeFreeAdminQueue`. It installs the response-sheet trigger and publishes existing form responses to Firestore. Re-running it is safe; the latest response per email becomes that person's public profile. To retry later, run `syncExistingResponseRows` and check the execution log for published and failed row counts.
 7. Open `https://<your-site>/admin` and sign in with the owner Google account.
 
 ## Form requirements
@@ -37,7 +38,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 - Optional questions: quote (250 characters maximum) and public handle (30 characters maximum).
 - President, Vice President, Secretary, and Student Coordinator skip the team question. Lead, Co-Lead, and Core Member choose a team.
 - The required file upload question must be titled exactly `Profile photo`.
-- Consent must say the submitted profile details and LinkedIn link can be displayed after approval. Photo consent should describe private review and website use only if the site will actually display it.
+- Consent must clearly say that valid submitted profile details, LinkedIn link, and photo are published on the public website immediately after submission. The uploaded photo is shared with anyone who has its Drive link.
 
 ## Provision the website admin
 
@@ -45,7 +46,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers the account from `INITIAL_ADMIN_EMAIL` as the first owner.
 3. Open `/admin` on the deployed site and sign in with that Google account.
 
-Only accounts with `owner` or `reviewer` in `adminUsers` can read submissions, approve/reject them, or inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out.
+Only accounts with `owner` or `reviewer` in `adminUsers` can read private submissions and inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out. Form publishing runs under the trusted Apps Script owner's Google account.
 
 The admin page offers Google sign-in, Email/Password sign-in, password-reset email, and email verification. There is no public sign-up; an owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). An owner adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified. Firestore rules enforce verified email and the admin allowlist.
 
@@ -55,6 +56,6 @@ Base Firebase Authentication on Spark does not provide app-enforced multi-factor
 
 ## Photo privacy and audit limits
 
-Google Forms places uploads in Drive. This website approval flow keeps that file private and provides an admin-only Drive review link; the existing Team page currently displays initials, not the uploaded image. The photo is not copied into public `teamMembers`. If you later want approved portraits visible, add an explicit publication step and public image hosting policy first; do not make the whole upload folder public.
+Google Forms places uploads in Drive. On each valid response, the script sets that individual photo to **Anyone with the link — Viewer** and publishes its image URL in the public team profile. Only the submitted photo is shared; the upload folder is not made public. This is required for visitors to see the portrait without signing in.
 
-Approvals/rejections are appended to Firestore `auditLogs` with Firebase server timestamps and cannot be edited by the website client. Apps Script uses its trusted Google account's Firestore IAM access to create pending records and intake logs. Firebase project owners and the Apps Script owner can still alter data outside the website, so keep those accounts restricted. This Spark-plan setup does not provide server-side session-duration tracking.
+Automatic profile publishes are appended to Firestore `auditLogs`. Apps Script uses its trusted Google account's Firestore IAM access to update the public profile and private submission record. Firebase project owners and the Apps Script owner can alter data outside the website, so keep those accounts restricted. This Spark-plan setup does not provide server-side session-duration tracking.

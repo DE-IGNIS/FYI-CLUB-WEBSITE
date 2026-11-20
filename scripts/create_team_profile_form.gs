@@ -36,8 +36,7 @@ function onTeamProfileSubmit(e) {
   const idMatch = uploadText.match(/[-\w]{25,}/);
   const fileId = idMatch ? idMatch[0] : uploadText;
   if (!fileId) throw new Error('Required profile photo is missing.');
-  // The uploaded profile photo is intended for the public roster after review.
-  // Link viewing lets the website load it through a normal image request.
+  // Form responses publish directly, so the roster image must be link-viewable.
   DriveApp.getFileById(fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   const submittedAt = String(answer('Timestamp') || (e.values && e.values[0]) || new Date().toISOString());
   const responseId = e.response ? e.response.getId() : Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, submittedAt + '|' + verifiedEmail));
@@ -51,40 +50,59 @@ function onTeamProfileSubmit(e) {
   const isExecutive = ['President','Vice President','Secretary','Student Coordinator'].includes(position);
   const teamNames = {'Photography Team':'Photography','PR & Outreach Team':'PR & Outreach','Social Media Team':'Social Media','Design & Content Team':'Design & Content','Event Management Team':'Event Management'};
   const department = isExecutive ? 'Executive Council' : (teamNames[team] || team);
+  const validDepartments = ['Executive Council','Technical Team','Design & Content','Event Management','Photography','PR & Outreach','Social Media'];
+  const validPositions = ['President','Vice President','Secretary','Student Coordinator','Lead','Co-Lead','Core Member'];
+  if (!name || !validDepartments.includes(department) || !validPositions.includes(position)) {
+    throw new Error('The response needs a full name, valid position, and valid team before it can be published.');
+  }
   const displayGroup = isExecutive || position === 'Lead' || position === 'Co-Lead' ? 'Executive Council' : department;
   const submissionId = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, responseId).map(b => ('0'+((b+256)%256).toString(16)).slice(-2)).join('');
   const memberId = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, verifiedEmail).map(b => ('0'+((b+256)%256).toString(16)).slice(-2)).join('');
   const privatePhotoUrl = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w800';
+  const publishedAt = new Date().toISOString();
   const profile = {
     submissionId, memberId, responseId, email: verifiedEmail, name, position,
     department, team: isExecutive ? '' : department, displayGroup,
     specialty, quote, handle,
     socialLinks: {linkedin},
     photoDriveId: fileId, photoUrl: privatePhotoUrl,
-    status: 'pending', submittedAt
+    status: 'approved', submittedAt, reviewedAt: publishedAt, reviewedBy: 'automatic-form-publish'
   };
-  // Idempotent create: backfilling the response sheet never resets a reviewed
-  // request or overwrites an existing member profile.
-  const firestoreCreated = createPendingFirestoreSubmission_(profile);
-  if (firestoreCreated) appendFirestoreAudit_('submission_received', submissionId, name, {status: 'pending'});
+  // Every valid response immediately replaces the public profile for this email.
+  publishTeamMemberToFirestore_(profile, publishedAt);
+  const firestoreCreated = upsertFirestoreSubmission_(profile);
+  if (firestoreCreated) appendFirestoreAudit_('profile_auto_published', memberId, name, {status: 'published', submissionId});
 
   let alreadyQueued = false;
   if (queue.getLastRow() > 1) {
     const responseIds = queue.getRange(2, 2, queue.getLastRow() - 1, 1).getDisplayValues().flat();
-    alreadyQueued = responseIds.includes(responseId);
+    const existingRow = responseIds.indexOf(responseId);
+    alreadyQueued = existingRow !== -1;
+    if (alreadyQueued) {
+      const rowNumber = existingRow + 2;
+      const headers = queue.getRange(1, 1, 1, queue.getLastColumn()).getDisplayValues()[0];
+      const updateQueueCell = (header, value) => {
+        const column = headers.indexOf(header);
+        if (column !== -1) queue.getRange(rowNumber, column + 1).setValue(value);
+      };
+      updateQueueCell('Website Review Status', 'Published');
+      updateQueueCell('Reviewed At', new Date(publishedAt));
+      updateQueueCell('Reviewed By', 'Automatic form publish');
+      updateQueueCell('Sync Error', '');
+    }
   }
-  if (alreadyQueued) return firestoreCreated;
+  if (alreadyQueued) return true;
   const rowByHeader = {
     'Submitted At': new Date(submittedAt), 'Response ID': responseId,
     'Private Email': verifiedEmail, 'Full Name': name, Position: position,
     'Department / Team': team, Specialty: specialty, Quote: quote, Handle: handle,
-    LinkedIn: linkedin, 'Photo Drive ID': fileId, 'Website Review Status': 'Pending',
-    'Reviewed At': '', 'Reviewed By': '', 'Sync Error': ''
+    LinkedIn: linkedin, 'Photo Drive ID': fileId, 'Website Review Status': 'Published',
+    'Reviewed At': new Date(publishedAt), 'Reviewed By': 'Automatic form publish', 'Sync Error': ''
   };
   const queueHeaders = queue.getRange(1, 1, 1, queue.getLastColumn()).getDisplayValues()[0];
   queue.appendRow(queueHeaders.map((header) => Object.prototype.hasOwnProperty.call(rowByHeader, header) ? rowByHeader[header] : ''));
-  appendAudit_(ss, 'submission_received', responseId, verifiedEmail);
-  return firestoreCreated;
+  appendAudit_(ss, 'profile_auto_published', responseId, verifiedEmail, 'Automatic form publish');
+  return true;
 }
 
 function initializeFreeAdminQueue() {
@@ -98,7 +116,7 @@ function initializeFreeAdminQueue() {
   if (!audit) audit = ss.insertSheet('Audit Log');
   if (audit.getLastRow() === 0) audit.appendRow(['Time','Action','Response ID','Member','Actor']);
   props.setProperty('TEAM_ADMIN_SHEET_ID', ss.getId());
-  // Replace old submit and spreadsheet-approval triggers. All review now happens at /admin.
+  // Replace old submit and spreadsheet-approval triggers. Valid responses publish directly.
   ScriptApp.getProjectTriggers()
     .filter(t => ['onTeamProfileSubmit', 'onEditTeamQueue'].includes(t.getHandlerFunction()))
     .forEach(t => ScriptApp.deleteTrigger(t));
@@ -108,8 +126,8 @@ function initializeFreeAdminQueue() {
   ScriptApp.newTrigger('onTeamProfileSubmit').forSpreadsheet(responseSheetId).onFormSubmit().create();
   Logger.log('Private admin queue: ' + ss.getUrl());
   Logger.log('Form response spreadsheet: ' + SpreadsheetApp.openById(responseSheetId).getUrl());
-  // Also import responses submitted before this trigger was installed. This is
-  // safe to repeat: existing Firestore submissions are never reset or duplicated.
+  // Also publish responses submitted before this trigger was installed. This
+  // is safe to repeat: response and member IDs are stable, so latest data wins.
   syncExistingResponseRows();
 }
 
@@ -149,7 +167,7 @@ function initializeWebsiteAdminOwner() {
   Logger.log('Initial website owner added.');
 }
 
-/** One-time backfill for submissions already present in the linked Form response spreadsheet. */
+/** Backfill or republish all responses already present in the linked spreadsheet. */
 function syncExistingResponseRows() {
   const formId = PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID');
   if (!formId) throw new Error('Set TEAM_FORM_ID in Script Properties first.');
@@ -166,7 +184,7 @@ function syncExistingResponseRows() {
   const rows = responseTab.getDataRange().getDisplayValues();
   if (rows.length < 2) { Logger.log('No existing response rows to sync.'); return; }
   const headers = rows[0];
-  let imported = 0;
+  let published = 0;
   let skippedOrFailed = 0;
   for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
     const values = rows[rowIndex];
@@ -174,14 +192,13 @@ function syncExistingResponseRows() {
     const namedValues = {};
     headers.forEach((header, index) => { namedValues[header] = [values[index] || '']; });
     try {
-      const firestoreCreated = onTeamProfileSubmit({ namedValues, values });
-      if (firestoreCreated) imported++;
+      if (onTeamProfileSubmit({ namedValues, values })) published++;
     } catch (err) {
       skippedOrFailed++;
       Logger.log('FAILED response row ' + (rowIndex + 1) + ' (' + (values[0] || 'no timestamp') + '): ' + (err && err.stack ? err.stack : err));
     }
   }
-  Logger.log('Backfill complete. New Firestore submissions: ' + imported + '; failed rows: ' + skippedOrFailed + '; response tab: ' + responseTab.getName() + '; queue rows: ' + Math.max(0, queue.getLastRow() - 1));
+  Logger.log('Backfill complete. Published responses: ' + published + '; failed rows: ' + skippedOrFailed + '; response tab: ' + responseTab.getName() + '; queue rows: ' + Math.max(0, queue.getLastRow() - 1));
 }
 
 function findFormResponseSheet_(spreadsheet) {
@@ -204,15 +221,15 @@ function findFormResponseSheet_(spreadsheet) {
   throw new Error('Could not find the Google Form response tab. Expected headers including Timestamp, Full name, Position, Profile photo, and Specialty. Tabs found:\n' + actualHeaders);
 }
 
-function createPendingFirestoreSubmission_(profile) {
+function upsertFirestoreSubmission_(profile) {
   const url = firestoreDocumentUrl_('teamSubmissions/' + profile.submissionId);
   const existing = UrlFetchApp.fetch(url, {
     method: 'get',
     headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
     muteHttpExceptions: true
   });
-  if (existing.getResponseCode() === 200) return false;
-  if (existing.getResponseCode() !== 404) throw new Error('Firestore lookup failed: ' + existing.getContentText());
+  const isNew = existing.getResponseCode() === 404;
+  if (!isNew && existing.getResponseCode() !== 200) throw new Error('Firestore lookup failed: ' + existing.getContentText());
   const fields = Object.fromEntries(Object.entries(profile).map(([key, value]) => [key, firestoreValue_(value)]));
   const response = UrlFetchApp.fetch(url, {
     method: 'patch', contentType: 'application/json',
@@ -222,7 +239,33 @@ function createPendingFirestoreSubmission_(profile) {
   if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
     throw new Error('Firestore submission sync failed: ' + response.getContentText());
   }
-  return true;
+  return isNew;
+}
+
+function publishTeamMemberToFirestore_(profile, publishedAt) {
+  const publicProfile = {
+    name: profile.name,
+    position: profile.position,
+    department: profile.department,
+    team: profile.team,
+    displayGroup: profile.displayGroup,
+    specialty: profile.specialty,
+    quote: profile.quote,
+    handle: profile.handle,
+    socialLinks: profile.socialLinks,
+    photoUrl: profile.photoUrl,
+    isPublished: true,
+    updatedAt: publishedAt
+  };
+  const fields = Object.fromEntries(Object.entries(publicProfile).map(([key, value]) => [key, firestoreValue_(value)]));
+  const response = UrlFetchApp.fetch(firestoreDocumentUrl_('teamMembers/' + profile.memberId), {
+    method: 'patch', contentType: 'application/json',
+    headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
+    payload: JSON.stringify({fields}), muteHttpExceptions: true
+  });
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
+    throw new Error('Direct team profile publish failed: ' + response.getContentText());
+  }
 }
 
 function appendFirestoreAudit_(action, targetId, targetName, after) {
