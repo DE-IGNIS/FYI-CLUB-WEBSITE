@@ -1,75 +1,4 @@
-/** Run createTeamProfileForm once from script.google.com. */
-function createTeamProfileForm() {
-  const form = FormApp.create('FYI Club Team Profile Update');
-  form.setDescription('Submit your details to update your profile on the FYI Club website. Updates will be reviewed before appearing. Your email will remain private.');
-  form.setConfirmationMessage('Thank you. Your profile update has been submitted for review. It will appear on the website after approval.');
-  form.setCollectEmail(true);
-  form.setLimitOneResponsePerUser(true);
-  const responseSheet = SpreadsheetApp.create('FYI Club Team Profile Responses');
-  form.setDestination(FormApp.DestinationType.SPREADSHEET, responseSheet.getId());
-
-  const textValidation = (max) => FormApp.createTextValidation().requireTextLengthLessThanOrEqualTo(max).build();
-  const name = form.addTextItem().setTitle('Full name').setRequired(true).setValidation(textValidation(100));
-  const emailValidation = FormApp.createTextValidation().requireTextIsEmail().build();
-  form.addTextItem().setTitle('VIT Bhopal email (will be private)').setRequired(true).setValidation(emailValidation);
-  const position = form.addMultipleChoiceItem().setTitle('Position').setRequired(true);
-
-  const teamPage = form.addPageBreakItem().setTitle('Team position');
-  form.addListItem().setTitle('Department / Team').setChoiceValues([
-    'Technical Team', 'Design & Content Team', 'Event Management Team',
-    'Photography Team', 'PR & Outreach Team', 'Social Media Team'
-  ]).setRequired(true);
-
-  const profile = form.addPageBreakItem().setTitle('Public profile details and consent');
-  form.addTextItem().setTitle('Specialty').setHelpText('A short description of what you work on. Maximum 150 characters.').setRequired(true).setValidation(textValidation(150));
-  form.addTextItem().setTitle('Quote for your profile').setRequired(false).setValidation(textValidation(250));
-  form.addTextItem().setTitle('Public handle').setHelpText('Optional. Example: @aarav_lead').setRequired(false).setValidation(textValidation(30));
-  form.addTextItem().setTitle('Instagram profile').setHelpText('Optional public username or profile URL.').setRequired(false);
-  form.addTextItem().setTitle('GitHub profile').setRequired(false);
-  form.addTextItem().setTitle('LinkedIn profile').setRequired(true);
-  form.addCheckboxItem().setTitle('Consent to use submitted information').setChoiceValues([
-    'I authorize FYI Club to store the details I submitted for profile review.',
-    'I consent to my approved profile details and public social links being displayed on the FYI Club website.',
-    'If I upload a photo, I confirm I have permission to submit it and agree it may be stored, compressed or cropped, and displayed with my approved profile.'
-  ]).setRequired(true).setValidation(FormApp.createCheckboxValidation().requireSelectExactly(3).build());
-
-  // The first four office positions bypass Department / Team. Leads, Co-Leads,
-  // and Core Members answer it, then both paths continue to profile details.
-  teamPage.setGoToPage(profile);
-  position.setChoices([
-    position.createChoice('President', profile),
-    position.createChoice('Vice President', profile),
-    position.createChoice('Secretary', profile),
-    position.createChoice('Student Coordinator', profile),
-    position.createChoice('Lead', teamPage),
-    position.createChoice('Co-Lead', teamPage),
-    position.createChoice('Core Member', teamPage)
-  ]);
-  PropertiesService.getScriptProperties().setProperty('TEAM_FORM_ID', form.getId());
-  installFormSubmitTrigger_(form);
-  // The script cannot create a Google Forms file-upload question. Add it in
-  // the editor to the profile section after running this setup.
-  Logger.log('Edit URL: ' + form.getEditUrl());
-  Logger.log('Responder URL: ' + form.getPublishedUrl());
-  Logger.log('Response Sheet: ' + responseSheet.getUrl());
-  Logger.log('Add the required File upload question manually in the final section. Name it exactly: Profile photo.');
-}
-
-/** For a form you already created manually: set TEAM_FORM_ID in Script Properties, then run this. */
-function installTriggerOnExistingTeamForm() {
-  const formId = PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID');
-  if (!formId) throw new Error('Set TEAM_FORM_ID in Script Properties first.');
-  installFormSubmitTrigger_(FormApp.openById(formId));
-}
-
-function installFormSubmitTrigger_(form) {
-  ScriptApp.getProjectTriggers()
-    .filter((trigger) => trigger.getHandlerFunction() === 'onTeamProfileSubmit')
-    .forEach((trigger) => ScriptApp.deleteTrigger(trigger));
-  ScriptApp.newTrigger('onTeamProfileSubmit').forForm(form).onFormSubmit().create();
-}
-
-/** Installable Google Form submit trigger. */
+/** Installable response-spreadsheet submit trigger. */
 function onTeamProfileSubmit(e) {
   if (!e || (!e.response && !e.namedValues)) throw new Error('Use the installed Form response-sheet trigger.');
   const props = PropertiesService.getScriptProperties();
@@ -151,12 +80,15 @@ function initializeFreeAdminQueue() {
   const ss = existingId ? SpreadsheetApp.openById(existingId) : SpreadsheetApp.create('FYI Team Profile Admin Queue');
   let queue = ss.getSheetByName('Submissions');
   if (!queue) queue = ss.getSheets()[0].setName('Submissions');
-  if (queue.getLastRow() === 0) queue.appendRow(['Submitted At','Response ID','Private Email','Full Name','Position','Department / Team','Specialty','Quote','Handle','Instagram','GitHub','LinkedIn','Photo Drive ID','Status (set Approved/Rejected)','Reviewed At','Reviewed By','Sync Error']);
+  if (queue.getLastRow() === 0) queue.appendRow(['Submitted At','Response ID','Private Email','Full Name','Position','Department / Team','Specialty','Quote','Handle','Instagram','GitHub','LinkedIn','Photo Drive ID','Website Review Status','Reviewed At','Reviewed By','Sync Error']);
   let audit = ss.getSheetByName('Audit Log');
   if (!audit) audit = ss.insertSheet('Audit Log');
   if (audit.getLastRow() === 0) audit.appendRow(['Time','Action','Response ID','Member','Actor']);
   props.setProperty('TEAM_ADMIN_SHEET_ID', ss.getId());
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'onTeamProfileSubmit').forEach(t => ScriptApp.deleteTrigger(t));
+  // Replace old submit and spreadsheet-approval triggers. All review now happens at /admin.
+  ScriptApp.getProjectTriggers()
+    .filter(t => ['onTeamProfileSubmit', 'onEditTeamQueue'].includes(t.getHandlerFunction()))
+    .forEach(t => ScriptApp.deleteTrigger(t));
   const form = FormApp.openById(PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID'));
   const responseSheetId = form.getDestinationId();
   if (!responseSheetId) throw new Error('Link the Google Form to its response spreadsheet first.');
@@ -253,18 +185,6 @@ function syncExistingResponseRows() {
   Logger.log('Backfill complete. Imported: ' + imported + '; skipped/failed: ' + skippedOrFailed);
 }
 
-function onEditTeamQueue(e) {
-  if (!e || e.range.getSheet().getName() !== 'Submissions' || e.range.getColumn() !== 14 || e.range.getRow() < 2) return;
-  const sheet = e.range.getSheet();
-  const row = e.range.getRow();
-  const status = String(e.value || '').trim();
-  if (!['Approved','Rejected'].includes(status)) return;
-  // The response spreadsheet is an intake/backup queue only. Website review
-  // is authenticated and audited at /admin, so a sheet edit must never publish.
-  e.range.setValue('Pending');
-  sheet.getRange(row, 17).setValue('Review this request in the website admin page: /admin');
-}
-
 function createPendingFirestoreSubmission_(profile) {
   const url = firestoreDocumentUrl_('teamSubmissions/' + profile.submissionId);
   const existing = UrlFetchApp.fetch(url, {
@@ -313,9 +233,4 @@ function firestoreValue_(v) {
 
 function appendAudit_(ss, action, id, member, actor) {
   ss.getSheetByName('Audit Log').appendRow([new Date(),action,id,member,actor||Session.getEffectiveUser().getEmail()||'system']);
-}
-
-function installQueueEditTrigger() {
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'onEditTeamQueue').forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('onEditTeamQueue').forSpreadsheet(PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID')).onEdit().create();
 }
