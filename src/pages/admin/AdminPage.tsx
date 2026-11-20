@@ -17,6 +17,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
   where,
   writeBatch,
 } from 'firebase/firestore';
@@ -46,6 +47,18 @@ type Submission = {
   reviewedAt?: { toDate?: () => Date };
 };
 type AuditEntry = { id: string; action?: string; actorEmail?: string; actorUid?: string; targetName?: string; targetId?: string; durationSeconds?: number; occurredAt?: { toDate?: () => Date }; before?: unknown; after?: unknown };
+type TeamMemberDraft = Pick<TeamMember, 'name' | 'position' | 'department' | 'specialty' | 'quote' | 'handle'> & {
+  linkedin: string;
+  photoUrl: string;
+};
+
+const DEPARTMENT_OPTIONS: TeamMember['department'][] = [
+  'Executive Council', 'Technical Team', 'Design & Content', 'Event Management',
+  'Photography', 'PR & Outreach', 'Social Media',
+];
+const POSITION_OPTIONS: TeamMember['position'][] = [
+  'President', 'Vice President', 'Secretary', 'Student Coordinator', 'Lead', 'Co-Lead', 'Core Member',
+];
 
 const panel = 'border-2 border-[#111111] bg-white p-5 sm:p-6 shadow-[5px_5px_0_#111111]';
 const label = 'block text-[10px] font-bold uppercase tracking-wider text-[#6E6C65]';
@@ -69,6 +82,8 @@ export const AdminPage: React.FC = () => {
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
   const [adminRecords, setAdminRecords] = useState<AdminRecord[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [memberDraft, setMemberDraft] = useState<TeamMemberDraft | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'owner' | 'reviewer'>('reviewer');
@@ -79,6 +94,55 @@ export const AdminPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const sessionStartedAt = React.useRef<number | null>(null);
   const photoMigrations = React.useRef(new Set<string>());
+
+  const startMemberEdit = (member: TeamMember) => {
+    setEditingMemberId(member.id);
+    setMemberDraft({
+      name: member.name,
+      position: member.position,
+      department: member.department,
+      specialty: member.specialty,
+      quote: member.quote,
+      handle: member.handle,
+      linkedin: member.socialLinks?.linkedin || '',
+      photoUrl: member.photoUrl || '',
+    });
+    setMessage('');
+  };
+
+  const updateMemberDraft = (field: keyof TeamMemberDraft, value: string) => {
+    setMemberDraft((current) => current ? { ...current, [field]: value } as TeamMemberDraft : current);
+  };
+
+  const saveTeamMember = async (event: React.FormEvent, memberId: string) => {
+    event.preventDefault();
+    if (!memberDraft || !memberDraft.name.trim()) {
+      setMessage('A team member name is required.');
+      return;
+    }
+    setBusyId(`member:${memberId}`);
+    setMessage('');
+    try {
+      await updateDoc(doc(db, 'teamMembers', memberId), {
+        name: memberDraft.name.trim(),
+        position: memberDraft.position,
+        department: memberDraft.department,
+        specialty: memberDraft.specialty.trim(),
+        quote: memberDraft.quote.trim(),
+        handle: memberDraft.handle.trim(),
+        socialLinks: { linkedin: cleanUrl(memberDraft.linkedin) },
+        photoUrl: getTeamPhotoUrl(memberDraft.photoUrl) || '',
+        updatedAt: serverTimestamp(),
+      });
+      setEditingMemberId(null);
+      setMemberDraft(null);
+      setMessage('Public team profile updated.');
+    } catch {
+      setMessage('Could not save the profile. Check your admin access and Firestore rules.');
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   useEffect(() => onAuthStateChanged(auth, async (currentUser) => {
     setUser(currentUser);
@@ -332,16 +396,38 @@ export const AdminPage: React.FC = () => {
           <section className={`${panel} mb-8`}>
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#111111]/20 pb-3 mb-4">
               <div><p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Public roster</p><h2 className="text-2xl font-black uppercase">Team members <span className="text-base">({teamMembers.length})</span></h2></div>
-              <p className="text-xs">Loaded from <code>teamMembers</code></p>
+              <p className="text-xs">Edit and save to update the public roster.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {teamMembers.map((member) => <article key={member.id} className="flex items-center gap-3 border border-[#111111]/20 p-3">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-[#111111] bg-[#F6F3EB] flex items-center justify-center font-bold">
-                  <span>{member.initials}</span>
-                  {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
-                </div>
-                <div className="min-w-0"><strong className="block truncate uppercase">{member.name}</strong><p className="text-xs">{member.position} · {member.department}</p><p className="text-[10px] uppercase text-[#6E6C65]">Published</p></div>
-              </article>)}
+              {teamMembers.map((member) => {
+                const isEditing = editingMemberId === member.id && memberDraft;
+                return <article key={member.id} className="border border-[#111111]/20 p-3">
+                  {isEditing ? <form onSubmit={(event) => void saveTeamMember(event, member.id)} className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className={label}>Name<input required value={memberDraft.name} onChange={(event) => updateMemberDraft('name', event.target.value)} className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]" /></label>
+                      <label className={label}>Department<select value={memberDraft.department} onChange={(event) => updateMemberDraft('department', event.target.value)} className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]">{DEPARTMENT_OPTIONS.map((department) => <option key={department} value={department}>{department}</option>)}</select></label>
+                      <label className={label}>Position<select value={memberDraft.position} onChange={(event) => updateMemberDraft('position', event.target.value)} className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]">{POSITION_OPTIONS.map((position) => <option key={position} value={position}>{position}</option>)}</select></label>
+                      <label className={label}>Specialty<input value={memberDraft.specialty} onChange={(event) => updateMemberDraft('specialty', event.target.value)} className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]" /></label>
+                      <label className={label}>Public handle<input value={memberDraft.handle} onChange={(event) => updateMemberDraft('handle', event.target.value)} className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]" /></label>
+                      <label className={label}>LinkedIn URL<input type="url" value={memberDraft.linkedin} onChange={(event) => updateMemberDraft('linkedin', event.target.value)} placeholder="https://linkedin.com/in/..." className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]" /></label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#6E6C65] sm:col-span-2">Photo URL<input type="url" value={memberDraft.photoUrl} onChange={(event) => updateMemberDraft('photoUrl', event.target.value)} placeholder="Drive thumbnail URL or image URL" className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]" /></label>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#6E6C65] sm:col-span-2">Quote<textarea value={memberDraft.quote} onChange={(event) => updateMemberDraft('quote', event.target.value)} rows={3} className="mt-1 w-full border border-[#111111] px-2 py-2 text-sm font-normal normal-case tracking-normal text-[#111111]" /></label>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="submit" disabled={busyId === `member:${member.id}`} className="bg-[#111111] px-3 py-2 text-xs font-bold uppercase text-white disabled:opacity-50">{busyId === `member:${member.id}` ? 'Saving…' : 'Save profile'}</button>
+                      <button type="button" onClick={() => { setEditingMemberId(null); setMemberDraft(null); }} className="border border-[#111111] px-3 py-2 text-xs font-bold uppercase">Cancel</button>
+                    </div>
+                    <p className="text-[10px] text-[#6E6C65]">A later form response from this member will update these profile fields.</p>
+                  </form> : <div className="flex items-center gap-3">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-[#111111] bg-[#F6F3EB] flex items-center justify-center font-bold">
+                      <span>{member.initials}</span>
+                      {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                    </div>
+                    <div className="min-w-0 flex-1"><strong className="block truncate uppercase">{member.name}</strong><p className="text-xs">{member.position} · {member.department}</p><p className="text-[10px] uppercase text-[#6E6C65]">Published</p></div>
+                    <button type="button" onClick={() => startMemberEdit(member)} className="shrink-0 border border-[#111111] px-3 py-2 text-xs font-bold uppercase hover:bg-[#F6F3EB]">Edit</button>
+                  </div>}
+                </article>;
+              })}
               {!teamMembers.length && <p className="text-sm">No published team members found.</p>}
             </div>
           </section>
