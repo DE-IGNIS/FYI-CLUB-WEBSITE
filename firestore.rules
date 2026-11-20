@@ -7,29 +7,70 @@ service cloud.firestore {
 
     function isAdmin() {
       return signedIn()
-        && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid))
-        && get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.role in ['owner', 'reviewer'];
+        && request.auth.token.email is string
+        && exists(/databases/$(database)/documents/adminUsers/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role in ['owner', 'reviewer'];
     }
 
-    // Admin accounts are provisioned manually in Firebase Console. Users can
-    // read their own role, but no client can grant or change admin permissions.
-    match /adminUsers/{userId} {
-      allow get: if signedIn() && request.auth.uid == userId;
-      allow list, create, update, delete: if false;
+    function isOwner() {
+      return signedIn()
+        && request.auth.token.email is string
+        && exists(/databases/$(database)/documents/adminUsers/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role == 'owner';
     }
 
-    // Form automation uses trusted server credentials to create pending records.
-    // Only registered reviewers can inspect or change their review state.
+    // Allowlist is keyed by normalized email. Only an owner can manage it;
+    // each authenticated user can check only their own access record.
+    match /adminUsers/{email} {
+      allow get: if signedIn() && request.auth.token.email == email;
+      allow list: if isOwner();
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['email', 'role', 'createdAt', 'createdByUid', 'createdByEmail'])
+        && request.resource.data.keys().hasAll(['email', 'role', 'createdAt', 'createdByUid'])
+        && request.resource.data.email == email
+        && request.resource.data.role in ['owner', 'reviewer']
+        && (email != request.auth.token.email
+          || request.resource.data.role == 'owner')
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isOwner() && email != request.auth.token.email;
+    }
+
+    // Apps Script writes pending submissions through the Firestore REST API.
+    // Browsers can only review a still-pending record as an approved/rejected
+    // decision; submitted profile content and the private email cannot be edited.
     match /teamSubmissions/{submissionId} {
       allow read: if isAdmin();
-      allow create, update, delete: if false;
+      allow create, delete: if false;
+      allow update: if isAdmin()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedAt', 'reviewedBy'])
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.reviewedBy == request.auth.uid
+        && request.resource.data.reviewedAt == request.time;
     }
 
-    // Audit history and session records are append/update-only from trusted
-    // Cloud Functions (Admin SDK). Browsers can inspect but never alter them.
+    // Browser admins can append a server-timestamped review record. Entries
+    // cannot be changed or deleted after creation.
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create, update, delete: if false;
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'action', 'actorUid', 'actorEmail', 'targetId', 'targetName',
+          'before', 'after', 'occurredAt', 'durationSeconds'
+        ])
+        && request.resource.data.keys().hasAll(['action', 'actorUid', 'occurredAt'])
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.action in [
+          'profile_approved', 'profile_rejected', 'admin_signed_in', 'admin_signed_out',
+          'admin_user_added', 'admin_user_removed'
+        ]
+        && request.resource.data.occurredAt == request.time
+        && (!('durationSeconds' in request.resource.data)
+          || (request.resource.data.durationSeconds is int
+            && request.resource.data.durationSeconds >= 0
+            && request.resource.data.durationSeconds <= 86400));
+      allow update, delete: if false;
     }
     match /adminSessions/{sessionId} {
       allow read: if isAdmin();
