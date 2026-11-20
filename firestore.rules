@@ -38,18 +38,11 @@ service cloud.firestore {
       allow delete: if isPrimaryOwner() && email != request.auth.token.email;
     }
 
-    // Apps Script writes pending submissions through the Firestore REST API.
-    // Browsers can only review a still-pending record as an approved/rejected
-    // decision; submitted profile content and the private email cannot be edited.
+    // Apps Script writes response records through trusted server credentials.
+    // Admins can inspect this private history, but submissions are never reviewed or edited here.
     match /teamSubmissions/{submissionId} {
       allow read: if isAdmin();
-      allow create, delete: if false;
-      allow update: if isAdmin()
-        && resource.data.status == 'pending'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedAt', 'reviewedBy'])
-        && request.resource.data.status in ['approved', 'rejected']
-        && request.resource.data.reviewedBy == request.auth.uid
-        && request.resource.data.reviewedAt == request.time;
+      allow create, update, delete: if false;
     }
 
     // Browser admins can append a server-timestamped review record. Entries
@@ -64,7 +57,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['action', 'actorUid', 'occurredAt'])
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.action in [
-          'profile_approved', 'profile_rejected', 'admin_signed_in', 'admin_signed_out',
+          'profile_auto_published', 'admin_signed_in', 'admin_signed_out',
           'admin_user_added', 'admin_user_removed'
         ]
         && request.resource.data.occurredAt == request.time

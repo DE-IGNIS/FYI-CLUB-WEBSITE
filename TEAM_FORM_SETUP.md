@@ -41,7 +41,7 @@ The member document ID is derived from the verified email. A new response can cr
 
 Saving this repository or pushing to GitHub does **not** update the separate Apps Script project. Paste and save the script there. Website hosting and Firestore rules also deploy separately; the GitHub workflow deploys hosting, while the command above deploys rules.
 
-The old `FYI Team Profile Admin Queue` spreadsheet, if one already exists, is no longer read or updated. Its status, review, and sync columns are historical and can be archived; the setup script leaves that spreadsheet untouched. The original Google Form response spreadsheet remains active.
+If an old review-queue spreadsheet exists, it is no longer used. Keep the original Google Form response spreadsheet as the active response source.
 
 ## Who can edit what
 

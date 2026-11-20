@@ -61,12 +61,12 @@ function onTeamProfileSubmit(e) {
     specialty, quote, handle,
     socialLinks: {linkedin},
     photoDriveId: fileId, photoUrl: privatePhotoUrl,
-    status: 'approved', submittedAt, reviewedAt: publishedAt, reviewedBy: 'automatic-form-publish'
+    status: 'published', submittedAt
   };
   // Every valid response immediately replaces the public profile for this email.
   publishTeamMemberToFirestore_(profile, publishedAt);
   const firestoreCreated = upsertFirestoreSubmission_(profile);
-  if (firestoreCreated) appendFirestoreAudit_('profile_auto_published', memberId, name, {status: 'published', submissionId});
+  if (firestoreCreated) appendFirestoreAudit_('profile_auto_published', memberId, name, {submissionId});
   return true;
 }
 
