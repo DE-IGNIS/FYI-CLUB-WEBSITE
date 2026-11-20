@@ -21,7 +21,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../lib/firebaseClient';
-import { mapPublishedTeamMember } from '../../data/team';
+import { getTeamPhotoUrl, mapPublishedTeamMember } from '../../data/team';
 import type { TeamMember } from '../../types';
 
 type Access = 'checking' | 'signed-out' | 'denied' | 'allowed';
@@ -79,6 +79,7 @@ export const AdminPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const sessionStartedAt = React.useRef<number | null>(null);
+  const photoMigrations = React.useRef(new Set<string>());
 
   useEffect(() => onAuthStateChanged(auth, async (currentUser) => {
     setUser(currentUser);
@@ -143,6 +144,29 @@ export const AdminPage: React.FC = () => {
     }
     return () => { stopSubmissions(); stopLogs(); stopMembers(); stopAdmins(); };
   }, [access, isOwner]);
+
+  useEffect(() => {
+    if (access !== 'allowed' || !submissions.length || !teamMembers.length) return;
+    const publishedById = new Map(teamMembers.map((member) => [member.id, member]));
+    const updates = submissions.flatMap((submission) => {
+      if (submission.status !== 'approved' || !submission.memberId || !submission.photoDriveId) return [];
+      const published = publishedById.get(submission.memberId);
+      const photoUrl = getTeamPhotoUrl(submission.photoUrl, submission.photoDriveId);
+      if (!published || published.photoUrl || !photoUrl || photoMigrations.current.has(submission.memberId)) return [];
+      photoMigrations.current.add(submission.memberId);
+      return [{ memberId: submission.memberId, photoUrl }];
+    });
+    if (!updates.length) return;
+
+    const batch = writeBatch(db);
+    updates.forEach(({ memberId, photoUrl }) => {
+      batch.update(doc(db, 'teamMembers', memberId), { photoUrl });
+    });
+    void batch.commit().catch(() => {
+      updates.forEach(({ memberId }) => photoMigrations.current.delete(memberId));
+      setMessage('Could not update photos for previously approved profiles. Check Firestore rules and Drive sharing.');
+    });
+  }, [access, submissions, teamMembers]);
 
   const pending = useMemo(() => submissions.filter((item) => item.status === 'pending'), [submissions]);
 
@@ -265,9 +289,7 @@ export const AdminPage: React.FC = () => {
           socialLinks: {
             linkedin: cleanUrl(submission.socialLinks?.linkedin),
           },
-          photoUrl: submission.photoUrl || (submission.photoDriveId
-            ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(submission.photoDriveId)}&sz=w800`
-            : ''),
+          photoUrl: getTeamPhotoUrl(submission.photoUrl, submission.photoDriveId) || '',
           isPublished: true,
           updatedAt: serverTimestamp(),
         };
