@@ -95,6 +95,9 @@ function initializeFreeAdminQueue() {
   ScriptApp.newTrigger('onTeamProfileSubmit').forSpreadsheet(responseSheetId).onFormSubmit().create();
   Logger.log('Private admin queue: ' + ss.getUrl());
   Logger.log('Form response spreadsheet: ' + SpreadsheetApp.openById(responseSheetId).getUrl());
+  // Also import responses submitted before this trigger was installed. This is
+  // safe to repeat: existing Firestore submissions are never reset or duplicated.
+  syncExistingResponseRows();
 }
 
 /** One-time bootstrap for the initial website owner. Run from the trusted Apps Script project. */
@@ -136,7 +139,13 @@ function syncExistingResponseRows() {
   const form = FormApp.openById(formId);
   const responseSheetId = form.getDestinationId();
   if (!responseSheetId) throw new Error('Link the Google Form to its response spreadsheet first.');
-  const responseTab = SpreadsheetApp.openById(responseSheetId).getSheets()[0];
+  const spreadsheet = SpreadsheetApp.openById(responseSheetId);
+  const responseTab = findFormResponseSheet_(spreadsheet);
+  const queueId = PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID');
+  if (!queueId) throw new Error('Run initializeFreeAdminQueue first.');
+  const queueSpreadsheet = SpreadsheetApp.openById(queueId);
+  const queue = queueSpreadsheet.getSheetByName('Submissions');
+  if (!queue) throw new Error('The private queue has no Submissions sheet. Run initializeFreeAdminQueue again.');
   const rows = responseTab.getDataRange().getDisplayValues();
   if (rows.length < 2) { Logger.log('No existing response rows to sync.'); return; }
   const headers = rows[0];
@@ -147,18 +156,35 @@ function syncExistingResponseRows() {
     if (!values.some(value => value.trim())) continue;
     const namedValues = {};
     headers.forEach((header, index) => { namedValues[header] = [values[index] || '']; });
-    const before = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID')).getSheetByName('Submissions').getLastRow();
     try {
       const firestoreCreated = onTeamProfileSubmit({ namedValues, values });
-      const after = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID')).getSheetByName('Submissions').getLastRow();
-      if (firestoreCreated || after > before) imported++;
-      else skippedOrFailed++;
+      if (firestoreCreated) imported++;
     } catch (err) {
       skippedOrFailed++;
-      Logger.log('Skipped response row ' + (rowIndex + 1) + ': ' + err);
+      Logger.log('FAILED response row ' + (rowIndex + 1) + ' (' + (values[0] || 'no timestamp') + '): ' + (err && err.stack ? err.stack : err));
     }
   }
-  Logger.log('Backfill complete. Imported: ' + imported + '; skipped/failed: ' + skippedOrFailed);
+  Logger.log('Backfill complete. New Firestore submissions: ' + imported + '; failed rows: ' + skippedOrFailed + '; response tab: ' + responseTab.getName() + '; queue rows: ' + Math.max(0, queue.getLastRow() - 1));
+}
+
+function findFormResponseSheet_(spreadsheet) {
+  const requiredHeaders = ['timestamp', 'full name', 'position', 'profile photo', 'specialty'];
+  const sheets = spreadsheet.getSheets();
+  for (let index = 0; index < sheets.length; index++) {
+    const sheet = sheets[index];
+    const lastColumn = sheet.getLastColumn();
+    if (sheet.getLastRow() < 1 || lastColumn < 1) continue;
+    const headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0]
+      .map(value => String(value || '').trim().toLowerCase());
+    if (requiredHeaders.every(required => headers.some(header => header.startsWith(required)))) return sheet;
+  }
+  const actualHeaders = sheets.map(sheet => {
+    const lastColumn = sheet.getLastColumn();
+    return sheet.getName() + ': ' + (lastColumn
+      ? sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].join(' | ')
+      : '(empty)');
+  }).join('\n');
+  throw new Error('Could not find the Google Form response tab. Expected headers including Timestamp, Full name, Position, Profile photo, and Specialty. Tabs found:\n' + actualHeaders);
 }
 
 function createPendingFirestoreSubmission_(profile) {
