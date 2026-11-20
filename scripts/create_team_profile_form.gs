@@ -129,30 +129,6 @@ function initializeWebsiteAdminOwner() {
   Logger.log('Initial website owner added: ' + email);
 }
 
-/** Enable free authenticator-app MFA after upgrading Firebase Auth to Identity Platform. */
-function enableTotpMfaForWebsiteAdmins() {
-  const configUrl = 'https://identitytoolkit.googleapis.com/admin/v2/projects/fyiclubvitbpl/config';
-  const headers = {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()};
-  const currentResponse = UrlFetchApp.fetch(configUrl, {method: 'get', headers, muteHttpExceptions: true});
-  if (currentResponse.getResponseCode() < 200 || currentResponse.getResponseCode() >= 300) {
-    throw new Error('Could not read Authentication configuration. Upgrade Firebase Authentication to Identity Platform first and grant this script project-admin access: ' + currentResponse.getContentText());
-  }
-  const current = JSON.parse(currentResponse.getContentText());
-  const mfa = current.mfa || {};
-  const configs = (mfa.providerConfigs || []).filter((config) => !config.totpProviderConfig);
-  configs.push({state: 'ENABLED', totpProviderConfig: {adjacentIntervals: 5}});
-  const payload = {mfa: {state: 'ENABLED', providerConfigs: configs}};
-  if (mfa.enabledProviders) payload.mfa.enabledProviders = mfa.enabledProviders;
-  const response = UrlFetchApp.fetch(configUrl + '?updateMask=mfa', {
-    method: 'patch', contentType: 'application/json', headers,
-    payload: JSON.stringify(payload), muteHttpExceptions: true
-  });
-  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
-    throw new Error('Could not enable TOTP MFA: ' + response.getContentText());
-  }
-  Logger.log('Authenticator-app TOTP MFA enabled for Firebase Authentication.');
-}
-
 /** One-time backfill for submissions already present in the linked Form response spreadsheet. */
 function syncExistingResponseRows() {
   const formId = PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID');

@@ -21,16 +21,14 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
      "https://www.googleapis.com/auth/script.external_request",
      "https://www.googleapis.com/auth/script.scriptapp",
      "https://www.googleapis.com/auth/datastore",
-     "https://www.googleapis.com/auth/cloud-platform",
      "https://www.googleapis.com/auth/userinfo.email"
    ]
    ```
 
-4. The Google account that owns the trigger must have Firestore data access and Firebase Authentication project configuration access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
-5. In Firebase Authentication settings, upgrade Authentication to Identity Platform. Spark remains no-billing, with a 3,000 daily-active-user limit for most providers after the upgrade. Then run `enableTotpMfaForWebsiteAdmins` once to enable authenticator-app TOTP (no SMS is used).
-6. Run `initializeWebsiteAdminOwner` once. It adds `sumit.24bce11520@vitbhopal.ac.in` as the initial owner in Firestore `adminUsers`.
-7. Run `initializeFreeAdminQueue`, then `syncExistingResponseRows` once to send current response rows into Firestore. New submissions sync automatically through the response-sheet trigger installed by initialization.
-8. Open `https://<your-site>/admin`, sign in with the owner Google account, enroll an authenticator app using the displayed setup key, then sign in again and complete the TOTP challenge.
+4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
+5. Run `initializeWebsiteAdminOwner` once. It adds `sumit.24bce11520@vitbhopal.ac.in` as the initial owner in Firestore `adminUsers`.
+6. Run `initializeFreeAdminQueue`, then `syncExistingResponseRows` once to send current response rows into Firestore. New submissions sync automatically through the response-sheet trigger installed by initialization.
+7. Open `https://<your-site>/admin` and sign in with the owner Google account.
 
 ## Form requirements
 
@@ -49,11 +47,11 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 
 Only accounts with `owner` or `reviewer` in `adminUsers` can read submissions, approve/reject them, or inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out.
 
-The admin page offers Google sign-in, Email/Password sign-in, a password-reset email, email verification, and authenticator-app TOTP MFA. There is no public sign-up; an owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). An owner adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified. Every admin must enroll TOTP; Firestore rules reject admin requests without a TOTP-authenticated session.
+The admin page offers Google sign-in, Email/Password sign-in, password-reset email, and email verification. There is no public sign-up; an owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). An owner adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified. Firestore rules enforce verified email and the admin allowlist.
 
 Firebase's built-in Google sign-in can still create an Auth user record when an unlisted person attempts sign-in; the website immediately denies access and signs them out. Preventing even that Auth record from being created requires Firebase Identity Platform blocking functions, which are not part of this Spark-plan setup.
 
-Authenticator-app TOTP does not send SMS. Keep phone/SMS MFA disabled to avoid SMS charges. You can also enable 2-Step Verification on the Google account used for Google sign-in.
+Base Firebase Authentication on Spark does not provide app-enforced multi-factor authentication. For a free extra sign-in factor, enable 2-Step Verification on the Google account used by the owner. Do not enable SMS authentication if you need to avoid SMS charges.
 
 ## Photo privacy and audit limits
 
