@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   onAuthStateChanged,
   sendEmailVerification,
@@ -77,7 +77,6 @@ export const AdminPage: React.FC = () => {
   const [forgotPassword, setForgotPassword] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
   const sessionStartedAt = React.useRef<number | null>(null);
   const photoMigrations = React.useRef(new Set<string>());
 
@@ -167,8 +166,6 @@ export const AdminPage: React.FC = () => {
       setMessage('Could not update photos for previously approved profiles. Check Firestore rules and Drive sharing.');
     });
   }, [access, submissions, teamMembers]);
-
-  const pending = useMemo(() => submissions.filter((item) => item.status === 'pending'), [submissions]);
 
   const handleEmailSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -265,63 +262,14 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  const review = async (submission: Submission, decision: 'approved' | 'rejected') => {
-    if (!user) return;
-    setBusyId(submission.id);
-    setMessage('');
-    try {
-      const batch = writeBatch(db);
-      const submissionRef = doc(db, 'teamSubmissions', submission.id);
-      batch.update(submissionRef, { status: decision, reviewedAt: serverTimestamp(), reviewedBy: user.uid });
-      if (decision === 'approved') {
-        if (!submission.memberId || !submission.name || !submission.position || !submission.department) {
-          throw new Error('This request is missing required profile fields.');
-        }
-        const publicProfile = {
-          name: submission.name,
-          position: submission.position,
-          department: submission.department,
-          team: submission.team || '',
-          displayGroup: submission.displayGroup || submission.department,
-          specialty: submission.specialty || '',
-          quote: submission.quote || '',
-          handle: submission.handle || '',
-          socialLinks: {
-            linkedin: cleanUrl(submission.socialLinks?.linkedin),
-          },
-          photoUrl: getTeamPhotoUrl(submission.photoUrl, submission.photoDriveId) || '',
-          isPublished: true,
-          updatedAt: serverTimestamp(),
-        };
-        batch.set(doc(db, 'teamMembers', submission.memberId), publicProfile, { merge: true });
-      }
-      batch.set(doc(collection(db, 'auditLogs')), {
-        action: decision === 'approved' ? 'profile_approved' : 'profile_rejected',
-        actorUid: user.uid,
-        actorEmail: user.email || '',
-        targetId: submission.id,
-        targetName: submission.name || '',
-        before: { status: 'pending' },
-        after: { status: decision, published: decision === 'approved' },
-        occurredAt: serverTimestamp(),
-      });
-      await batch.commit();
-      setMessage(decision === 'approved' ? `${submission.name} approved and published.` : `${submission.name} rejected.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Review failed. Check your connection and try again.');
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-[#F6F3EB] text-[#111111] px-4 py-8 sm:px-8 sm:py-10 font-mono">
       <div className="max-w-5xl mx-auto">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-[#111111] pb-5 mb-8">
           <div>
             <p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">FYI / PRIVATE CONSOLE</p>
-            <h1 className="text-3xl sm:text-4xl font-black uppercase mt-1">Team approvals</h1>
-            <p className="mt-2 text-xs text-[#6E6C65]">Private review queue · approved profile photos appear on the public website</p>
+            <h1 className="text-3xl sm:text-4xl font-black uppercase mt-1">Team profiles</h1>
+            <p className="mt-2 text-xs text-[#6E6C65]">Valid form responses publish directly to the public team page</p>
           </div>
           {user && <button onClick={() => void handleSignOut()} className="border-2 border-[#111111] bg-white px-4 py-2 text-xs font-bold uppercase">Sign out</button>}
         </header>
@@ -378,8 +326,8 @@ export const AdminPage: React.FC = () => {
             </div>
           </section>}
           <section className="grid grid-cols-2 gap-3 mb-6">
-            <div className={panel}><span className={label}>Waiting for review</span><strong className="mt-2 block text-3xl">{pending.length}</strong></div>
-            <div className={panel}><span className={label}>All submissions</span><strong className="mt-2 block text-3xl">{submissions.length}</strong></div>
+            <div className={panel}><span className={label}>Published profiles</span><strong className="mt-2 block text-3xl">{teamMembers.length}</strong></div>
+            <div className={panel}><span className={label}>Form responses</span><strong className="mt-2 block text-3xl">{submissions.length}</strong></div>
           </section>
           <section className={`${panel} mb-8`}>
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#111111]/20 pb-3 mb-4">
@@ -398,14 +346,13 @@ export const AdminPage: React.FC = () => {
             </div>
           </section>
           <div className="flex flex-wrap justify-between items-end gap-3 border-b-2 border-[#111111] pb-3 mb-5">
-            <div><p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Form submissions</p><h2 className="text-2xl font-black uppercase">Review queue</h2></div>
-            <button onClick={() => setShowHistory((value) => !value)} className="text-xs font-bold uppercase underline">{showHistory ? 'Hide history' : 'Show reviewed profiles'}</button>
+            <div><p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Form submissions</p><h2 className="text-2xl font-black uppercase">Latest responses</h2></div>
           </div>
           <div className="space-y-5">
-            {(showHistory ? submissions : pending).map((item) => <article key={item.id} className={panel}>
+            {submissions.map((item) => <article key={item.id} className={panel}>
               <div className="flex flex-wrap justify-between gap-3 border-b border-[#111111]/20 pb-3 mb-4">
                 <div><h3 className="text-xl font-black uppercase">{item.name || 'Unnamed submission'}</h3><p className="text-xs mt-1">{item.department || item.team || 'No team'} · {item.position || 'No position'}</p></div>
-                <span className={`text-xs font-bold uppercase ${item.status === 'pending' ? 'text-[#FF4800]' : 'text-[#6E6C65]'}`}>{item.status || 'unknown'}</span>
+                <span className="text-xs font-bold uppercase text-[#FF4800]">{item.status === 'approved' ? 'Published' : item.status || 'unknown'}</span>
               </div>
               <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div><dt className={label}>Verified email · private</dt><dd className="break-all">{item.email || '—'}</dd></div>
@@ -418,12 +365,8 @@ export const AdminPage: React.FC = () => {
                 {item.quote && <div className="sm:col-span-2"><dt className={label}>Quote</dt><dd>{item.quote}</dd></div>}
               </dl>
               {item.photoDriveId && <a className="inline-block mt-4 text-sm underline" href={`https://drive.google.com/file/d/${encodeURIComponent(item.photoDriveId)}/view`} target="_blank" rel="noreferrer">Review submitted photo in Drive ↗</a>}
-              {item.status === 'pending' && <div className="flex flex-wrap gap-3 mt-6">
-                <button disabled={busyId === item.id} onClick={() => void review(item, 'approved')} className="bg-[#111111] text-white px-4 py-2 text-xs font-bold uppercase disabled:opacity-50">Approve &amp; publish</button>
-                <button disabled={busyId === item.id} onClick={() => void review(item, 'rejected')} className="border-2 border-[#111111] px-4 py-2 text-xs font-bold uppercase disabled:opacity-50">Reject</button>
-              </div>}
             </article>)}
-            {(showHistory ? submissions : pending).length === 0 && <p className={panel}>{showHistory ? 'No submissions yet.' : 'No profiles are waiting for review.'}</p>}
+            {!submissions.length && <p className={panel}>No form responses have been received yet.</p>}
           </div>
 
           <section className="mt-12">
