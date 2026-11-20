@@ -20,10 +20,16 @@ function onTeamProfileSubmit(e) {
   const position = String(answer('Position') || '');
   const teamValue = answer('Department / Team');
   const team = Array.isArray(teamValue) ? String(teamValue[0] || '') : String(teamValue || '');
-  const verifiedEmail = String((e.response && e.response.getRespondentEmail()) || answer('Email Address') || answer('VIT Bhopal email') || '').trim().toLowerCase();
-  const enteredEmail = String(answer('VIT Bhopal email') || verifiedEmail).trim().toLowerCase();
-  if (!verifiedEmail || enteredEmail !== verifiedEmail) {
-    throw new Error('The VIT Bhopal email answer must match the signed-in Google account.');
+  const collectedEmail = (e.response && e.response.getRespondentEmail()) || answer('Email Address');
+  const verifiedEmail = String(collectedEmail || '').trim().toLowerCase();
+  const enteredEmail = String(answer('VIT Bhopal email') || '').trim().toLowerCase();
+  if (!/^[^\s@]+@vitbhopal\.ac\.in$/.test(verifiedEmail)) {
+    throw new Error('No automatically collected VIT Bhopal email was found. Set Google Forms email collection to verified email and submit while signed in with your @vitbhopal.ac.in account.');
+  }
+  // The Google-collected address is authoritative. The separate text answer is
+  // redundant and must not block a valid submission if it contains a typo.
+  if (enteredEmail && enteredEmail !== verifiedEmail) {
+    Logger.log('The typed VIT Bhopal email differs from the Google-collected address; using the collected address for this profile.');
   }
   const upload = answer('Profile photo');
   const uploadText = Array.isArray(upload) ? String(upload[0] || '') : String(upload || '');
