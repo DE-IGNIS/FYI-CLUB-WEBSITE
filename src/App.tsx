@@ -7,6 +7,7 @@ import { JoinModal } from './components/common';
 import { RouteMetadata } from './components/common/RouteMetadata';
 import { useMagneticButtons, use3DTilt, useScrollReveal } from './hooks';
 import { playClickSound, playSparkSound, toggleSound, isSoundEnabled } from './lib/sound';
+import { AdminLandingPage } from './pages/admin/AdminLandingPage';
 
 // 7 Page Modules
 import {
@@ -202,6 +203,7 @@ export function App() {
                 <Route path="/team" element={<ErrorBoundary><TeamPage /></ErrorBoundary>} />
                 <Route path="/gallery" element={<ErrorBoundary><GalleryPage /></ErrorBoundary>} />
                 <Route path="/join" element={<ErrorBoundary><JoinPage /></ErrorBoundary>} />
+                <Route path="/admin" element={<ErrorBoundary><AdminLandingPage /></ErrorBoundary>} />
                 {/* 404 fallback */}
                 <Route
                   path="*"
