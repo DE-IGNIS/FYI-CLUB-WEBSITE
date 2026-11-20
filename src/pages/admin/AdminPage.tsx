@@ -183,7 +183,7 @@ export const AdminPage: React.FC = () => {
     if (!user || !isOwner) return;
     const email = newAdminEmail.trim().toLowerCase();
     if (!/^[^\s@]+@vitbhopal\.ac\.in$/i.test(email)) {
-      setMessage('Enter a valid @vitbhopal.ac.in email address.');
+      setMessage('Enter a valid VIT Bhopal account address.');
       return;
     }
     if (email === user.email?.toLowerCase() && newAdminRole !== 'owner') {
@@ -301,12 +301,12 @@ export const AdminPage: React.FC = () => {
             <p className="my-4 text-center text-sm text-[#6E6C65]">Admin access is limited to VIT Bhopal emails added by an owner.</p>
             {forgotPassword ? <form onSubmit={(event) => void handlePasswordReset(event)} className="space-y-3">
               <label className={label} htmlFor="admin-email-reset">VIT Bhopal email</label>
-              <input id="admin-email-reset" type="email" required autoComplete="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="name@vitbhopal.ac.in" className="w-full border-2 border-[#111111] px-3 py-3 text-sm" />
+              <input id="admin-email-reset" type="email" required autoComplete="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="Enter your VIT Bhopal email" className="w-full border-2 border-[#111111] px-3 py-3 text-sm" />
               <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Send reset link</button>
               <button type="button" onClick={() => setForgotPassword(false)} className="w-full py-2 text-xs font-bold uppercase underline">Back to sign in</button>
             </form> : <>
               <form onSubmit={(event) => void handleEmailSignIn(event)} className="space-y-3">
-                <div><label className={label} htmlFor="admin-email">Email</label><input id="admin-email" type="email" required autoComplete="username" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="name@vitbhopal.ac.in" className="mt-1 w-full border-2 border-[#111111] px-3 py-3 text-sm" /></div>
+                <div><label className={label} htmlFor="admin-email">Email</label><input id="admin-email" type="email" required autoComplete="username" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="Enter your VIT Bhopal email" className="mt-1 w-full border-2 border-[#111111] px-3 py-3 text-sm" /></div>
                 <div><label className={label} htmlFor="admin-password">Password</label><input id="admin-password" type="password" required autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} className="mt-1 w-full border-2 border-[#111111] px-3 py-3 text-sm" /></div>
                 <div className="text-right"><button type="button" onClick={() => setForgotPassword(true)} className="text-xs font-bold underline">Forgot password?</button></div>
                 <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Sign in with email</button>
@@ -330,7 +330,7 @@ export const AdminPage: React.FC = () => {
             <h2 className="mt-1 text-2xl font-black uppercase">Admin allowlist</h2>
             <p className="my-3 text-xs text-[#6E6C65]">Only owners can add or remove accounts. Allowed accounts must use their VIT Bhopal Google email.</p>
             <form onSubmit={(event) => void addAdmin(event)} className="grid sm:grid-cols-[1fr_180px_auto] gap-2">
-              <input aria-label="VIT Bhopal email" type="email" required value={newAdminEmail} onChange={(event) => setNewAdminEmail(event.target.value)} placeholder="name@vitbhopal.ac.in" className="min-w-0 border-2 border-[#111111] px-3 py-2 text-sm" />
+              <input aria-label="VIT Bhopal email" type="email" required value={newAdminEmail} onChange={(event) => setNewAdminEmail(event.target.value)} placeholder="Enter VIT Bhopal email" className="min-w-0 border-2 border-[#111111] px-3 py-2 text-sm" />
               <select aria-label="Admin role" value={newAdminRole} onChange={(event) => setNewAdminRole(event.target.value as 'owner' | 'reviewer')} className="border-2 border-[#111111] px-3 py-2 text-sm">
                 <option value="reviewer">Reviewer</option><option value="owner">Owner</option>
               </select>

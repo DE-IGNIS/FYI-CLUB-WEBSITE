@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { submitCohortApplication, ApplicationResult } from './join.service';
 import type { JoinApplication } from '../../types';
-import { CLUB_META, CURRENT_COHORT, getAdmissionEmailPlaceholder } from '../../data/clubData';
+import { CLUB_META, CURRENT_COHORT, VIT_EMAIL_PLACEHOLDER } from '../../data/clubData';
 
 export const JoinPage: React.FC = () => {
   // The form is controlled locally; submission state selects success, error, or loading UI.
@@ -127,7 +127,7 @@ export const JoinPage: React.FC = () => {
                       <input
                         type="email"
                         required
-                        placeholder={getAdmissionEmailPlaceholder('first')}
+                        placeholder={VIT_EMAIL_PLACEHOLDER}
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="w-full bg-[#F6F3EB] border-2 border-primary p-3 font-mono text-sm focus:outline-none focus:bg-white focus:border-brand-orange transition-colors"
@@ -238,16 +238,9 @@ export const JoinPage: React.FC = () => {
               </span>
               <h4 className="font-headline text-xl font-black uppercase mb-2">CONNECT DIRECTLY</h4>
               <p className="font-body text-xs text-primary mb-4">
-                Reach out to the team directly on our official inbox or visit our official handles.
+                Reach out to the team through our official social channels.
               </p>
               <div className="flex flex-col gap-2">
-                <a
-                  href={CLUB_META.socials.email}
-                  className="inline-flex items-center justify-between bg-primary text-white hover:bg-brand-orange font-mono text-xs font-bold px-4 py-2 border border-black uppercase transition-colors"
-                >
-                  <span>{CLUB_META.email}</span>
-                  <span>↗</span>
-                </a>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <a
                     href={CLUB_META.socials.instagram}

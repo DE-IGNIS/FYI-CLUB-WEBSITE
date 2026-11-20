@@ -11,7 +11,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 ## Apps Script setup
 
 1. In Apps Script, paste the current `scripts/create_team_profile_form.gs` into the project attached to the form. Save it.
-2. In **Project Settings → Script Properties**, keep `TEAM_FORM_ID` set to the existing form ID. Keep `TEAM_ADMIN_SHEET_ID` set to the private queue sheet ID already created for the form.
+2. In **Project Settings → Script Properties**, keep `TEAM_FORM_ID` set to the existing form ID and `TEAM_ADMIN_SHEET_ID` set to the private queue sheet ID already created for the form. Set `INITIAL_ADMIN_EMAIL` to the first owner's VIT Bhopal account. Keep the email value in Script Properties, not in Git or source code.
 3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. In the manifest's `oauthScopes`, merge these scopes with any existing entries:
 
    ```json
@@ -26,13 +26,13 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
    ```
 
 4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
-5. Run `initializeWebsiteAdminOwner` once. It adds `sumit.24bce11520@vitbhopal.ac.in` as the initial owner in Firestore `adminUsers`.
+5. Run `initializeWebsiteAdminOwner` once. It adds the account from `INITIAL_ADMIN_EMAIL` as the initial owner in Firestore `adminUsers`.
 6. Run `initializeFreeAdminQueue`. It installs the response-sheet trigger and automatically imports existing form responses into Firestore. Re-running it is safe and retries existing rows without resetting an approval. To retry later, run `syncExistingResponseRows` and check the execution log for the imported count and any failed response row details.
 7. Open `https://<your-site>/admin` and sign in with the owner Google account.
 
 ## Form requirements
 
-- Set Google Forms to collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents. The automatically collected `@vitbhopal.ac.in` address is the trusted private email. If the form also asks for a VIT email as text, that duplicate answer does not control authentication or block a valid submission.
+- Set Google Forms to collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents. The automatically collected address from the VIT Bhopal domain is the trusted private identity. If the form also asks for an address as text, that duplicate answer does not control authentication or block a valid submission.
 - Required questions: full name; position; department/team for Lead, Co-Lead, and Core Member; profile photo; specialty (150 characters maximum); LinkedIn; and consent.
 - Optional questions: quote (250 characters maximum), public handle (30 characters maximum), Instagram, and GitHub.
 - President, Vice President, Secretary, and Student Coordinator skip the team question. Lead, Co-Lead, and Core Member choose a team.
@@ -42,7 +42,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 ## Provision the website admin
 
 1. Enable both Google and Email/Password in Firebase Authentication and add the production domain to authorized domains.
-2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers `sumit.24bce11520@vitbhopal.ac.in` as the first owner.
+2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers the account from `INITIAL_ADMIN_EMAIL` as the first owner.
 3. Open `/admin` on the deployed site and sign in with that Google account.
 
 Only accounts with `owner` or `reviewer` in `adminUsers` can read submissions, approve/reject them, or inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out.
