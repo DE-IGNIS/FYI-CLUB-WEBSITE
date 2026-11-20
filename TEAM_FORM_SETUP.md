@@ -10,9 +10,10 @@ The form-submit trigger is installed for the existing form. Its form ID is alrea
 
 This setup does not use Cloud Functions, Secret Manager, or a billing account. Form submissions are held in a private Google Sheet. The Tech Lead approves/rejects by editing the Status cell; an Apps Script trigger writes approved public fields to Firestore and records the decision in the Sheet's Audit Log tab.
 
-1. In Apps Script, run `initializeFreeAdminQueue`. It creates a private queue spreadsheet and stores its ID as `TEAM_ADMIN_SHEET_ID`.
+1. In Apps Script, run `initializeFreeAdminQueue`. It reuses or creates the private queue and installs a submit trigger on the Form's linked response spreadsheet.
 2. Run `installQueueEditTrigger` once. Keep the queue restricted to trusted admins.
-3. In Apps Script **Project Settings**, enable **Show `appsscript.json` manifest file**. Add these scopes to the manifest's `oauthScopes` array (merge with any existing scopes):
+3. Run `syncExistingResponseRows` once to backfill responses already present in the linked Form response spreadsheet. It skips email addresses already in the queue, so it is safe to rerun.
+4. In Apps Script **Project Settings**, enable **Show `appsscript.json` manifest file**. Add these scopes to the manifest's `oauthScopes` array (merge with any existing scopes):
 
    ```json
    [
@@ -25,7 +26,7 @@ This setup does not use Cloud Functions, Secret Manager, or a billing account. F
    ```
 
    The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. If it is already project owner, no additional role is needed. Reauthorize Apps Script when prompted.
-4. Submit a test response. The row appears as Pending. Change its status cell to exactly `Approved` or `Rejected`. Approval publishes a Firestore profile and makes the photo's Drive link viewable to anyone, as covered by the form consent.
+5. Submit a test response. The row appears as Pending. Change its status cell to exactly `Approved` or `Rejected`. Approval publishes a Firestore profile and makes the photo's Drive link viewable to anyone, as covered by the form consent.
 
 The Form submit trigger's script uses the verified respondent email and checks it against the private email answer. Do not share the queue Sheet or upload folder publicly. Keep Apps Script editors limited to trusted admins.
 

@@ -105,6 +105,10 @@ function onTeamProfileSubmit(e) {
   const responseId = e.response ? e.response.getId() : Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, submittedAt + '|' + verifiedEmail));
   const ss = SpreadsheetApp.openById(sheetId);
   const queue = ss.getSheetByName('Submissions');
+  if (queue.getLastRow() > 1) {
+    const existingEmails = queue.getRange(2, 3, queue.getLastRow() - 1, 1).getDisplayValues().flat().map(value => value.trim().toLowerCase());
+    if (existingEmails.includes(verifiedEmail)) return;
+  }
   queue.appendRow([new Date(submittedAt), responseId, verifiedEmail, String(answer('Full name') || ''), position, team,
     String(answer('Specialty') || ''), String(answer('Quote for your profile') || ''), String(answer('Public handle') || ''),
     String(answer('Instagram profile') || ''), String(answer('GitHub profile') || ''), String(answer('LinkedIn profile') || ''),
@@ -129,6 +133,39 @@ function initializeFreeAdminQueue() {
   if (!responseSheetId) throw new Error('Link the Google Form to its response spreadsheet first.');
   ScriptApp.newTrigger('onTeamProfileSubmit').forSpreadsheet(responseSheetId).onFormSubmit().create();
   Logger.log('Private admin queue: ' + ss.getUrl());
+  Logger.log('Form response spreadsheet: ' + SpreadsheetApp.openById(responseSheetId).getUrl());
+}
+
+/** One-time backfill for submissions already present in the linked Form response spreadsheet. */
+function syncExistingResponseRows() {
+  const formId = PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID');
+  if (!formId) throw new Error('Set TEAM_FORM_ID in Script Properties first.');
+  const form = FormApp.openById(formId);
+  const responseSheetId = form.getDestinationId();
+  if (!responseSheetId) throw new Error('Link the Google Form to its response spreadsheet first.');
+  const responseTab = SpreadsheetApp.openById(responseSheetId).getSheets()[0];
+  const rows = responseTab.getDataRange().getDisplayValues();
+  if (rows.length < 2) { Logger.log('No existing response rows to sync.'); return; }
+  const headers = rows[0];
+  let imported = 0;
+  let skippedOrFailed = 0;
+  for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+    const values = rows[rowIndex];
+    if (!values.some(value => value.trim())) continue;
+    const namedValues = {};
+    headers.forEach((header, index) => { namedValues[header] = [values[index] || '']; });
+    const before = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID')).getSheetByName('Submissions').getLastRow();
+    try {
+      onTeamProfileSubmit({ namedValues, values });
+      const after = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID')).getSheetByName('Submissions').getLastRow();
+      if (after > before) imported++;
+      else skippedOrFailed++;
+    } catch (err) {
+      skippedOrFailed++;
+      Logger.log('Skipped response row ' + (rowIndex + 1) + ': ' + err);
+    }
+  }
+  Logger.log('Backfill complete. Imported: ' + imported + '; skipped/failed: ' + skippedOrFailed);
 }
 
 function onEditTeamQueue(e) {
