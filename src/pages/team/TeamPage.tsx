@@ -20,6 +20,11 @@ export const TeamPage: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [members, setMembers] = useState<TeamMember[]>([]);
 
+  const selectSquad = (department: string) => {
+    setSelectedDept(department);
+    document.getElementById('member-roster')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   useEffect(() => {
     let active = true;
     getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true))).then((snapshot) => {
@@ -44,7 +49,7 @@ export const TeamPage: React.FC = () => {
   // Show the full roster for ALL, otherwise filter to the selected department.
   const filteredMembers = selectedDept === 'ALL'
     ? members
-    : members.filter((m) => (m.displayGroup || m.department) === selectedDept);
+    : members.filter((m) => m.department === selectedDept);
 
   return (
     <div className="w-full">
@@ -63,7 +68,7 @@ export const TeamPage: React.FC = () => {
       />
 
       {/* Main Team Showcase */}
-      <section className="w-full max-w-7xl mx-auto px-4 md:px-8 py-14 border-b-2 border-primary">
+      <section id="member-roster" className="w-full max-w-7xl mx-auto px-4 md:px-8 py-14 border-b-2 border-primary scroll-mt-24">
         {/* Department Filter Tabs */}
         <div className="flex flex-wrap items-center gap-2 mb-10 pb-4 border-b-2 border-primary">
           {departments.map((dept) => (
@@ -146,22 +151,10 @@ export const TeamPage: React.FC = () => {
                       href={member.socialLinks.linkedin}
                       target="_blank"
                       rel="noreferrer"
-                      className="hover:text-brand-cyan"
+                      className="text-brand-orange font-bold hover:text-brand-cyan underline underline-offset-2"
                       title="LinkedIn"
                     >
-                      LI
-                    </a>
-                  )}
-                  {member.socialLinks?.linkedin && (
-                    <a
-                      href={member.socialLinks.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand-orange font-bold hover:text-brand-cyan"
-                      aria-label={`Explore ${member.name}'s LinkedIn profile`}
-                      title="Explore LinkedIn profile"
-                    >
-                      ↗
+                      EXPLORE ↗
                     </a>
                   )}
                 </div>
@@ -195,10 +188,13 @@ export const TeamPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {CLUB_TEAMS.map((team, idx) => (
-              <div
-                key={idx}
+              <button
+                key={team.department}
+                type="button"
+                onClick={() => selectSquad(team.department)}
+                aria-label={`View ${team.name} members`}
                 data-tilt
-                className="bg-white border-2 border-primary brutal-shadow p-6 flex flex-col justify-between hover:-translate-y-1 transition-all"
+                className="w-full text-left bg-white border-2 border-primary brutal-shadow p-6 flex flex-col justify-between hover:-translate-y-1 transition-all focus-visible:outline focus-visible:outline-4 focus-visible:outline-brand-orange"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3 border-b-2 border-primary pb-2">
@@ -212,8 +208,9 @@ export const TeamPage: React.FC = () => {
                   <h3 className="font-headline text-2xl font-black uppercase mb-2 text-primary">
                     {team.name}
                   </h3>
+                  <span className="font-mono text-[10px] font-bold uppercase text-brand-orange">View squad members ↗</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
