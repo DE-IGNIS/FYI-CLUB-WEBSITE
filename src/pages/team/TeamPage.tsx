@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { TEAM_MEMBERS } from '../../data/clubData';
 import { Link } from 'react-router-dom';
 import { KineticMarqueeRibbon, TextScramble } from '../../components/animations';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../../lib/firebaseClient';
+import type { TeamMember } from '../../types';
 
 const CLUB_TEAMS = [
   {
@@ -39,6 +42,30 @@ const CLUB_TEAMS = [
 
 export const TeamPage: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
+  const [members, setMembers] = useState<TeamMember[]>(TEAM_MEMBERS);
+
+  useEffect(() => {
+    let active = true;
+    getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true))).then((snapshot) => {
+      if (!active || snapshot.empty) return;
+      const live = snapshot.docs.map((entry) => {
+        const raw = entry.data();
+        const name = String(raw.name || '');
+        const position = (['President','Vice President','Secretary','Student Coordinator','Lead','Co-Lead','Core Member'].includes(raw.position) ? raw.position : 'Core Member') as TeamMember['position'];
+        return {
+          id: entry.id, name, initials: name.split(/\s+/).map((part: string) => part[0] || '').join('').slice(0,2).toUpperCase(),
+          department: raw.department as TeamMember['department'], displayGroup: String(raw.displayGroup || raw.department || ''), position,
+          roleTag: String(raw.position || '').toUpperCase(), roleBg: 'bg-brand-orange text-white', avatarBg: 'bg-brand-cyan', textColor: 'text-primary',
+          specialty: String(raw.specialty || ''), quote: String(raw.quote || ''), handle: String(raw.handle || ''),
+          socialLinks: raw.socialLinks || {},
+        } as TeamMember;
+      });
+      const liveNames = new Set(live.map((member) => member.name.trim().toLowerCase()));
+      const fallback = TEAM_MEMBERS.filter((member) => !liveNames.has(member.name.trim().toLowerCase()));
+      setMembers([...live, ...fallback]);
+    }).catch(() => { /* Keep the bundled roster available if Firestore is unavailable. */ });
+    return () => { active = false; };
+  }, []);
 
   const departments = [
     'ALL',
@@ -53,8 +80,8 @@ export const TeamPage: React.FC = () => {
 
   // Show the full roster for ALL, otherwise filter to the selected department.
   const filteredMembers = selectedDept === 'ALL'
-    ? TEAM_MEMBERS
-    : TEAM_MEMBERS.filter((m) => m.department === selectedDept);
+    ? members
+    : members.filter((m) => (m.displayGroup || m.department) === selectedDept);
 
   return (
     <div className="w-full">

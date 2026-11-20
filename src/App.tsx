@@ -109,6 +109,7 @@ export function App() {
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [prefilledEvent, setPrefilledEvent] = useState<string | undefined>(undefined);
   const [soundOn, setSoundOn] = useState(isSoundEnabled);
+  const isAdminRoute = window.location.pathname === '/admin';
 
   const triggerLogoIntro = useCallback(() => {
     setIntroKey((prev) => prev + 1);
@@ -189,7 +190,7 @@ export function App() {
             }}
           >
             {/* Sticky Shared Navigation */}
-            <Navbar />
+            {!isAdminRoute && <Navbar />}
 
             {/* Modular 7-Page Routing Engine */}
             <main className="w-full flex-grow">
@@ -221,7 +222,7 @@ export function App() {
             </main>
 
             {/* Shared Terminal Footer */}
-            <Footer />
+            {!isAdminRoute && <Footer />}
           </div>
 
           {/* 4. Cohort Application & Event RSVP Modal */}
