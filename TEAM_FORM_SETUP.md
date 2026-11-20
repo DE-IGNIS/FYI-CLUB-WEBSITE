@@ -11,14 +11,14 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 ## Apps Script setup
 
 1. In Apps Script, paste the current `scripts/create_team_profile_form.gs` into the project attached to the form. Save it.
-2. In **Project Settings → Script Properties**, set `TEAM_FORM_ID` to the existing form ID and `INITIAL_ADMIN_EMAIL` to the first owner's VIT Bhopal account. `TEAM_ADMIN_SHEET_ID` is created and saved automatically by `initializeFreeAdminQueue`; do not create or enter it manually. Keep the email value in Script Properties, not in Git or source code.
+2. In **Project Settings → Script Properties**, set `TEAM_FORM_ID` to the existing form ID and `INITIAL_ADMIN_EMAIL` to the official FYI owner's VIT Bhopal account. `TEAM_ADMIN_SHEET_ID` is created and saved automatically by `initializeFreeAdminQueue`; do not create or enter it manually. Keep the email value in Script Properties, not in Git or source code.
 3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. In the manifest's `oauthScopes`, merge these scopes with any existing entries:
 
    ```json
    [
      "https://www.googleapis.com/auth/forms",
      "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
+     "https://www.googleapis.com/auth/drive",
      "https://www.googleapis.com/auth/script.external_request",
      "https://www.googleapis.com/auth/script.scriptapp",
      "https://www.googleapis.com/auth/datastore",
@@ -27,9 +27,10 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
    ```
 
 4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
-5. Run `initializeWebsiteAdminOwner` once. It adds the account from `INITIAL_ADMIN_EMAIL` as the initial owner in Firestore `adminUsers`.
+5. Run `initializeWebsiteAdminOwner` once. It adds or marks the account from `INITIAL_ADMIN_EMAIL` as the primary FYI owner in Firestore `adminUsers`. Re-run it once if that owner account was initialized before the `isPrimaryOwner` flag was added.
 6. Run `initializeFreeAdminQueue`. It installs the response-sheet trigger and publishes existing form responses to Firestore. Re-running it is safe; the latest response per email becomes that person's public profile. To retry later, run `syncExistingResponseRows` and check the execution log for published and failed row counts.
-7. Open `https://<your-site>/admin` and sign in with the owner Google account.
+7. Deploy the current Firestore rules so only the primary FYI owner can manage admins while every listed admin can edit team profiles: `firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl`.
+8. Open `https://<your-site>/admin` and sign in with the official owner Google account.
 
 ## Form requirements
 
@@ -46,9 +47,9 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers the account from `INITIAL_ADMIN_EMAIL` as the first owner.
 3. Open `/admin` on the deployed site and sign in with that Google account.
 
-Only accounts with `owner` or `reviewer` in `adminUsers` can read private submissions and inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out. Form publishing runs under the trusted Apps Script owner's Google account.
+Any account listed in `adminUsers` can edit public team profiles and read private submissions and audit history. Only the primary FYI owner can add or remove admin accounts; all newly added accounts are regular admins and cannot manage the allowlist. An unlisted account is denied and signed out. Form publishing runs under the trusted Apps Script owner's Google account.
 
-The admin page offers Google sign-in, Email/Password sign-in, password-reset email, and email verification. There is no public sign-up; an owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). An owner adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified. Firestore rules enforce verified email and the admin allowlist.
+The admin page offers Google sign-in, Email/Password sign-in, password-reset email, and email verification. There is no public sign-up; the primary owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). Adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified. Firestore rules enforce verified email and the admin allowlist.
 
 Firebase's built-in Google sign-in can still create an Auth user record when an unlisted person attempts sign-in; the website immediately denies access and signs them out. Preventing even that Auth record from being created requires Firebase Identity Platform blocking functions, which are not part of this Spark-plan setup.
 

@@ -26,7 +26,7 @@ import { getTeamPhotoUrl, mapPublishedTeamMember } from '../../data/team';
 import type { TeamMember } from '../../types';
 
 type Access = 'checking' | 'signed-out' | 'denied' | 'allowed';
-type AdminRecord = { id: string; email?: string; role?: 'owner' | 'reviewer' };
+type AdminRecord = { id: string; email?: string; role?: 'owner' | 'reviewer'; isPrimaryOwner?: boolean };
 type Submission = {
   id: string;
   memberId?: string;
@@ -84,9 +84,8 @@ export const AdminPage: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [memberDraft, setMemberDraft] = useState<TeamMemberDraft | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
+  const [isPrimaryOwner, setIsPrimaryOwner] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminRole, setNewAdminRole] = useState<'owner' | 'reviewer'>('reviewer');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [forgotPassword, setForgotPassword] = useState(false);
@@ -148,7 +147,7 @@ export const AdminPage: React.FC = () => {
     setUser(currentUser);
     if (!currentUser) {
       setAccess('signed-out');
-      setIsOwner(false);
+      setIsPrimaryOwner(false);
       return;
     }
     setAccess('checking');
@@ -157,7 +156,9 @@ export const AdminPage: React.FC = () => {
       if (!emailKey) throw new Error('Google account has no email address.');
       const adminRecord = await getDoc(doc(db, 'adminUsers', emailKey));
       const isAdmin = adminRecord.exists() && ['owner', 'reviewer'].includes(adminRecord.data().role);
-      setIsOwner(adminRecord.exists() && adminRecord.data().role === 'owner');
+      setIsPrimaryOwner(adminRecord.exists()
+        && adminRecord.data().role === 'owner'
+        && adminRecord.data().isPrimaryOwner === true);
       if (isAdmin) {
         const isPasswordAccount = currentUser.providerData.some((provider) => provider.providerId === 'password');
         if (isPasswordAccount && !currentUser.emailVerified) {
@@ -198,7 +199,7 @@ export const AdminPage: React.FC = () => {
         .sort((a, b) => a.name.localeCompare(b.name)));
     }, () => setMessage('Could not load published team members. Check Firestore rules.'));
     let stopAdmins: () => void = () => {};
-    if (isOwner) {
+    if (isPrimaryOwner) {
       stopAdmins = onSnapshot(collection(db, 'adminUsers'), (snapshot) => {
         setAdminRecords(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as AdminRecord))
           .filter((entry) => Boolean(entry.email))
@@ -206,7 +207,7 @@ export const AdminPage: React.FC = () => {
       }, () => setMessage('Could not load the admin allowlist.'));
     }
     return () => { stopSubmissions(); stopLogs(); stopMembers(); stopAdmins(); };
-  }, [access, isOwner]);
+  }, [access, isPrimaryOwner]);
 
   useEffect(() => {
     if (access !== 'allowed' || !submissions.length || !teamMembers.length) return;
@@ -275,39 +276,43 @@ export const AdminPage: React.FC = () => {
 
   const addAdmin = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!user || !isOwner) return;
+    if (!user || !isPrimaryOwner) return;
     const email = newAdminEmail.trim().toLowerCase();
     if (!/^[^\s@]+@vitbhopal\.ac\.in$/i.test(email)) {
       setMessage('Enter a valid VIT Bhopal account address.');
       return;
     }
-    if (email === user.email?.toLowerCase() && newAdminRole !== 'owner') {
-      setMessage('The current owner cannot change their own role.');
+    if (email === user.email?.toLowerCase()) {
+      setMessage('The primary owner cannot add their own account as an administrator.');
+      return;
+    }
+    if (adminRecords.some((record) => record.id === email)) {
+      setMessage('That account is already on the admin list.');
       return;
     }
     setBusyId(`admin:${email}`);
     try {
       const batch = writeBatch(db);
       batch.set(doc(db, 'adminUsers', email), {
-        email, role: newAdminRole, createdAt: serverTimestamp(),
+        email, role: 'reviewer', createdAt: serverTimestamp(),
         createdByUid: user.uid, createdByEmail: user.email || '',
       });
       batch.set(doc(collection(db, 'auditLogs')), {
         action: 'admin_user_added', actorUid: user.uid, actorEmail: user.email || '',
-        targetId: email, targetName: email, after: { role: newAdminRole }, occurredAt: serverTimestamp(),
+        targetId: email, targetName: email, after: { role: 'reviewer' }, occurredAt: serverTimestamp(),
       });
       await batch.commit();
       setNewAdminEmail('');
-      setMessage(`${email} added as ${newAdminRole}. They can sign in with that Google account.`);
+      setMessage(`${email} added as an admin. They can sign in with that Google account.`);
     } catch {
-      setMessage('Could not add this account. Check your owner role and Firestore rules.');
+      setMessage('Could not add this account. Check the primary owner access and Firestore rules.');
     } finally {
       setBusyId(null);
     }
   };
 
   const removeAdmin = async (record: AdminRecord) => {
-    if (!user || !isOwner || !record.email || record.email.toLowerCase() === user.email?.toLowerCase()) return;
+    if (!user || !isPrimaryOwner || !record.email || record.isPrimaryOwner) return;
     setBusyId(`remove:${record.id}`);
     try {
       const batch = writeBatch(db);
@@ -370,21 +375,18 @@ export const AdminPage: React.FC = () => {
         {message && <p role="status" className="my-5 border-l-4 border-[#FF4800] bg-white px-4 py-3 text-sm font-bold">{message}</p>}
 
         {access === 'allowed' && <>
-          {isOwner && <section className={`${panel} mb-7`}>
-            <p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Owner controls</p>
+          {isPrimaryOwner && <section className={`${panel} mb-7`}>
+            <p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">FYI official controls</p>
             <h2 className="mt-1 text-2xl font-black uppercase">Admin allowlist</h2>
-            <p className="my-3 text-xs text-[#6E6C65]">Only owners can add or remove accounts. Allowed accounts must use their VIT Bhopal Google email.</p>
-            <form onSubmit={(event) => void addAdmin(event)} className="grid sm:grid-cols-[1fr_180px_auto] gap-2">
+            <p className="my-3 text-xs text-[#6E6C65]">Only the initial FYI official account can add or remove admins. Every listed admin can edit public team profiles.</p>
+            <form onSubmit={(event) => void addAdmin(event)} className="grid sm:grid-cols-[1fr_auto] gap-2">
               <input aria-label="VIT Bhopal email" type="email" required value={newAdminEmail} onChange={(event) => setNewAdminEmail(event.target.value)} placeholder="Enter VIT Bhopal email" className="min-w-0 border-2 border-[#111111] px-3 py-2 text-sm" />
-              <select aria-label="Admin role" value={newAdminRole} onChange={(event) => setNewAdminRole(event.target.value as 'owner' | 'reviewer')} className="border-2 border-[#111111] px-3 py-2 text-sm">
-                <option value="reviewer">Reviewer</option><option value="owner">Owner</option>
-              </select>
               <button disabled={busyId?.startsWith('admin:')} className="border-2 border-[#111111] bg-[#111111] px-4 py-2 text-xs font-bold uppercase text-white disabled:opacity-50">Add account</button>
             </form>
             <div className="mt-4 divide-y divide-[#111111]/20 border-y border-[#111111]/20">
               {adminRecords.map((record) => <div key={record.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                <span>{record.email} <strong className="ml-2 text-[10px] uppercase text-[#FF4800]">{record.role}</strong></span>
-                {record.email?.toLowerCase() !== user?.email?.toLowerCase() && <button disabled={busyId === `remove:${record.id}`} onClick={() => void removeAdmin(record)} className="text-xs font-bold uppercase underline disabled:opacity-50">Remove</button>}
+                <span>{record.email} <strong className="ml-2 text-[10px] uppercase text-[#FF4800]">{record.isPrimaryOwner ? 'FYI official' : 'Admin'}</strong></span>
+                {!record.isPrimaryOwner && <button disabled={busyId === `remove:${record.id}`} onClick={() => void removeAdmin(record)} className="text-xs font-bold uppercase underline disabled:opacity-50">Remove</button>}
               </div>)}
               {!adminRecords.length && <p className="py-3 text-xs">No allowlisted accounts found. Run initial admin setup first.</p>}
             </div>
