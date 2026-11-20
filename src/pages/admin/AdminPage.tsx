@@ -1,17 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   onAuthStateChanged,
-  getMultiFactorResolver,
-  multiFactor,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
-  TotpMultiFactorGenerator,
-  type MultiFactorError,
-  type MultiFactorResolver,
-  type TotpSecret,
   type User,
 } from 'firebase/auth';
 import {
@@ -27,7 +21,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../lib/firebaseClient';
 
-type Access = 'checking' | 'signed-out' | 'denied' | 'needs-mfa' | 'allowed';
+type Access = 'checking' | 'signed-out' | 'denied' | 'allowed';
 type AdminRecord = { id: string; email?: string; role?: 'owner' | 'reviewer' };
 type Submission = {
   id: string;
@@ -77,9 +71,6 @@ export const AdminPage: React.FC = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [forgotPassword, setForgotPassword] = useState(false);
-  const [mfaResolver, setMfaResolver] = useState<MultiFactorResolver | null>(null);
-  const [totpSecret, setTotpSecret] = useState<TotpSecret | null>(null);
-  const [totpCode, setTotpCode] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [showHistory, setShowHistory] = useState(false);
@@ -105,11 +96,6 @@ export const AdminPage: React.FC = () => {
           await sendEmailVerification(currentUser);
           setMessage('Verify your email using the link we just sent. Then return here and sign in again.');
           await signOut(auth);
-          return;
-        }
-        const token = await currentUser.getIdTokenResult(true);
-        if (token.signInSecondFactor !== TotpMultiFactorGenerator.FACTOR_ID) {
-          setAccess('needs-mfa');
           return;
         }
         setAccess('allowed');
@@ -150,58 +136,6 @@ export const AdminPage: React.FC = () => {
 
   const pending = useMemo(() => submissions.filter((item) => item.status === 'pending'), [submissions]);
 
-  const captureMfaChallenge = (error: unknown) => {
-    if ((error as { code?: string })?.code !== 'auth/multi-factor-auth-required') return false;
-    setMfaResolver(getMultiFactorResolver(auth, error as MultiFactorError));
-    setMessage('Enter the current code from your authenticator app to finish signing in.');
-    return true;
-  };
-
-  const startTotpEnrollment = async () => {
-    if (!user) return;
-    setMessage('');
-    try {
-      const session = await multiFactor(user).getSession();
-      setTotpSecret(await TotpMultiFactorGenerator.generateSecret(session));
-    } catch {
-      setMessage('TOTP is not enabled for this Firebase Authentication project yet. Enable Auth with Identity Platform and TOTP, then try again.');
-    }
-  };
-
-  const finishTotpEnrollment = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!user || !totpSecret) return;
-    try {
-      const assertion = TotpMultiFactorGenerator.assertionForEnrollment(totpSecret, totpCode.trim());
-      await multiFactor(user).enroll(assertion, 'FYI Club Admin Authenticator');
-      setTotpSecret(null);
-      setTotpCode('');
-      setMessage('Authenticator added. Sign in again and complete the TOTP challenge to open the admin console.');
-      await signOut(auth);
-    } catch {
-      setMessage('That authenticator code was not accepted. Use the newest six-digit code and try again.');
-    }
-  };
-
-  const finishTotpSignIn = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!mfaResolver) return;
-    const factor = mfaResolver.hints.find((hint) => hint.factorId === TotpMultiFactorGenerator.FACTOR_ID);
-    if (!factor) {
-      setMessage('No authenticator factor is enrolled for this account. Contact an owner to recover access.');
-      return;
-    }
-    try {
-      const assertion = TotpMultiFactorGenerator.assertionForSignIn(factor.uid, totpCode.trim());
-      await mfaResolver.resolveSignIn(assertion);
-      setMfaResolver(null);
-      setTotpCode('');
-      setMessage('');
-    } catch {
-      setMessage('That authenticator code was not accepted. Try the current six-digit code.');
-    }
-  };
-
   const handleEmailSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage('');
@@ -209,7 +143,6 @@ export const AdminPage: React.FC = () => {
       await signInWithEmailAndPassword(auth, loginEmail.trim().toLowerCase(), loginPassword);
       setLoginPassword('');
     } catch (error) {
-      if (captureMfaChallenge(error)) return;
       const code = (error as { code?: string }).code;
       setMessage(code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found'
         ? 'Email or password is incorrect.'
@@ -366,13 +299,7 @@ export const AdminPage: React.FC = () => {
             <p className="text-center text-xs uppercase tracking-widest text-[#FF4800] font-bold">FYI CLUB · PRIVATE ADMIN</p>
             <h2 className="mt-2 text-center text-2xl font-black uppercase">{forgotPassword ? 'Reset password' : 'Sign in'}</h2>
             <p className="my-4 text-center text-sm text-[#6E6C65]">Admin access is limited to VIT Bhopal emails added by an owner.</p>
-            {mfaResolver ? <form onSubmit={(event) => void finishTotpSignIn(event)} className="space-y-3">
-              <p className="text-sm">Enter the six-digit code from your authenticator app.</p>
-              <label className={label} htmlFor="admin-totp-login">Authenticator code</label>
-              <input id="admin-totp-login" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={totpCode} onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))} className="w-full border-2 border-[#111111] px-3 py-3 text-center text-lg tracking-[0.4em]" />
-              <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Verify code</button>
-              <button type="button" onClick={() => { setMfaResolver(null); setTotpCode(''); }} className="w-full py-2 text-xs font-bold uppercase underline">Use another sign-in</button>
-            </form> : forgotPassword ? <form onSubmit={(event) => void handlePasswordReset(event)} className="space-y-3">
+            {forgotPassword ? <form onSubmit={(event) => void handlePasswordReset(event)} className="space-y-3">
               <label className={label} htmlFor="admin-email-reset">VIT Bhopal email</label>
               <input id="admin-email-reset" type="email" required autoComplete="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="name@vitbhopal.ac.in" className="w-full border-2 border-[#111111] px-3 py-3 text-sm" />
               <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Send reset link</button>
@@ -385,9 +312,7 @@ export const AdminPage: React.FC = () => {
                 <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Sign in with email</button>
               </form>
               <div className="my-4 flex items-center gap-3 text-[10px] font-bold uppercase text-[#6E6C65]"><span className="h-px flex-1 bg-[#111111]/20" />or<span className="h-px flex-1 bg-[#111111]/20" /></div>
-          <button onClick={() => void signInWithPopup(auth, googleProvider).catch((error: unknown) => {
-            if (!captureMfaChallenge(error)) setMessage('Google sign in failed. Check that Google sign-in is enabled in Firebase Authentication.');
-          })} className="w-full border-2 border-[#111111] bg-white px-5 py-3 text-xs font-bold uppercase">Continue with Google</button>
+          <button onClick={() => void signInWithPopup(auth, googleProvider).catch(() => setMessage('Google sign in failed. Check that Google sign-in is enabled in Firebase Authentication.'))} className="w-full border-2 border-[#111111] bg-white px-5 py-3 text-xs font-bold uppercase">Continue with Google</button>
               <p className="mt-4 text-center text-[10px] leading-relaxed text-[#6E6C65]">No public sign-up. An owner must add your VIT email first. Email/password accounts must verify their email before entering.</p>
             </>}
           </div>
@@ -396,32 +321,6 @@ export const AdminPage: React.FC = () => {
           <h2 className="font-black uppercase text-xl">Access denied</h2>
           <p className="mt-2 text-sm">This Google account is not registered in the Firebase <code>adminUsers</code> allowlist.</p>
           <button onClick={() => void signOut(auth)} className="mt-4 underline">Sign out</button>
-        </section>}
-        {access === 'needs-mfa' && user && <section className={panel}>
-          <div className="mx-auto max-w-lg">
-            <p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Required account security</p>
-            <h2 className="mt-2 text-2xl font-black uppercase">Authenticator verification</h2>
-            <p className="my-3 text-sm">Add a TOTP authenticator to this allowlisted admin account. Admin data stays locked until a TOTP sign-in is completed.</p>
-            {multiFactor(user).enrolledFactors.some((factor) => factor.factorId === TotpMultiFactorGenerator.FACTOR_ID)
-              ? <div className="space-y-3">
-                <p className="border-l-4 border-[#FF4800] bg-[#F6F3EB] p-3 text-sm">An authenticator is already enrolled, but this session did not use it. Enable TOTP MFA in Firebase Authentication settings and sign in again.</p>
-                <button onClick={() => void signOut(auth)} className="border-2 border-[#111111] px-4 py-2 text-xs font-bold uppercase">Sign out</button>
-              </div>
-              : <>
-                {!totpSecret ? <button onClick={() => void startTotpEnrollment()} className="bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Set up authenticator</button>
-                  : <form onSubmit={(event) => void finishTotpEnrollment(event)} className="space-y-3">
-                    <div className="border-2 border-[#111111] bg-[#F6F3EB] p-4">
-                      <span className={label}>One-time setup key · keep private</span>
-                      <code className="mt-2 block break-all text-sm font-bold tracking-wider">{totpSecret.secretKey}</code>
-                      <p className="mt-3 text-xs">In Google Authenticator or another TOTP app, add an account manually, choose time-based code, and enter this key.</p>
-                    </div>
-                    <label className={label} htmlFor="admin-totp-enroll">Enter the app's six-digit code</label>
-                    <input id="admin-totp-enroll" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={totpCode} onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, '').slice(0, 6))} className="w-full border-2 border-[#111111] px-3 py-3 text-center text-lg tracking-[0.4em]" />
-                    <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Verify and enable</button>
-                    <button type="button" onClick={() => { setTotpSecret(null); setTotpCode(''); }} className="w-full py-2 text-xs font-bold uppercase underline">Cancel setup</button>
-                  </form>}
-              </>}
-          </div>
         </section>}
         {message && <p role="status" className="my-5 border-l-4 border-[#FF4800] bg-white px-4 py-3 text-sm font-bold">{message}</p>}
 
