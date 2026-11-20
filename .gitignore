@@ -43,6 +43,7 @@ build/Release
 
 # Dependency directories
 node_modules/
+functions/lib/
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
@@ -120,4 +121,6 @@ desktop.ini
 # Temporary scratch scripts
 scratch/
 *.tmp
+scripts/create_team_profile_form.gs
+TEAM_FORM_SETUP.md
 

@@ -39,6 +39,7 @@ export interface EventItem {
 
 export interface TeamMember {
   id: string;
+  displayGroup?: string;
   name: string;
   initials: string;
   department:
@@ -49,7 +50,7 @@ export interface TeamMember {
     | 'Photography'
     | 'PR & Outreach'
     | 'Social Media';
-  position: 'President' | 'Vice President' | 'Lead' | 'Co-Lead';
+  position: 'President' | 'Vice President' | 'Secretary' | 'Student Coordinator' | 'Lead' | 'Co-Lead' | 'Core Member';
   roleTag: string;
   roleBg: string;
   avatarBg: string;
@@ -61,7 +62,27 @@ export interface TeamMember {
   socialLinks?: {
     linkedin?: string;
     github?: string;
+    instagram?: string;
   };
+}
+
+export interface TeamSubmission {
+  id: string;
+  email: string;
+  name: string;
+  department: TeamMember['department'];
+  position: TeamMember['position'];
+  specialty: string;
+  quote: string;
+  handle: string;
+  socialLinks: {
+    instagram?: string;
+    github?: string;
+    linkedin?: string;
+  };
+  photoUrl?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt?: string;
 }
 
 export interface FaqItem {
