@@ -47,8 +47,6 @@ export function mapPublishedTeamMember(id: string, raw: Record<string, unknown>)
     handle: String(raw.handle || ''),
     socialLinks: {
       linkedin: typeof rawSocialLinks.linkedin === 'string' ? rawSocialLinks.linkedin : undefined,
-      github: typeof rawSocialLinks.github === 'string' ? rawSocialLinks.github : undefined,
-      instagram: typeof rawSocialLinks.instagram === 'string' ? rawSocialLinks.instagram : undefined,
     },
   };
 }

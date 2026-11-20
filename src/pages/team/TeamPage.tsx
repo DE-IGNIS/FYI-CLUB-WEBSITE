@@ -140,17 +140,6 @@ export const TeamPage: React.FC = () => {
               <div className="mt-auto pt-3 border-t border-primary/20 flex items-center justify-between font-mono text-xs text-brand-muted">
                 <span className="font-bold text-primary">{member.handle}</span>
                 <div className="flex items-center gap-2">
-                  {member.socialLinks?.github && (
-                    <a
-                      href={member.socialLinks.github}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="hover:text-brand-orange"
-                      title="GitHub"
-                    >
-                      GH
-                    </a>
-                  )}
                   {member.socialLinks?.linkedin && (
                     <a
                       href={member.socialLinks.linkedin}

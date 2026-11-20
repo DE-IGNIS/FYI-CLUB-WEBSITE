@@ -35,7 +35,7 @@ type Submission = {
   specialty?: string;
   quote?: string;
   handle?: string;
-  socialLinks?: { instagram?: string; github?: string; linkedin?: string };
+  socialLinks?: { linkedin?: string };
   photoDriveId?: string;
   photoUrl?: string;
   status?: 'pending' | 'approved' | 'rejected';
@@ -253,8 +253,6 @@ export const AdminPage: React.FC = () => {
           quote: submission.quote || '',
           handle: submission.handle || '',
           socialLinks: {
-            instagram: cleanUrl(submission.socialLinks?.instagram),
-            github: cleanUrl(submission.socialLinks?.github),
             linkedin: cleanUrl(submission.socialLinks?.linkedin),
           },
           isPublished: true,
@@ -363,10 +361,9 @@ export const AdminPage: React.FC = () => {
                 <div><dt className={label}>Submitted</dt><dd>{dateText(item.submittedAt)}</dd></div>
                 <div><dt className={label}>Public handle</dt><dd>{item.handle || '—'}</dd></div>
                 <div><dt className={label}>Specialty</dt><dd>{item.specialty || '—'}</dd></div>
-                <div className="sm:col-span-2"><dt className={label}>Social links</dt><dd className="flex flex-wrap gap-x-4 gap-y-1">
-                  {(['instagram', 'github', 'linkedin'] as const).map((network) => item.socialLinks?.[network] && <a key={network} className="underline break-all" href={cleanUrl(item.socialLinks[network])} target="_blank" rel="noreferrer">{network}: {item.socialLinks[network]}</a>)}
-                  {!item.socialLinks?.instagram && !item.socialLinks?.github && !item.socialLinks?.linkedin && '—'}
-                </dd></div>
+                <div><dt className={label}>LinkedIn profile</dt><dd>{item.socialLinks?.linkedin
+                  ? <a className="underline break-all" href={cleanUrl(item.socialLinks.linkedin)} target="_blank" rel="noopener noreferrer">Open LinkedIn profile</a>
+                  : '—'}</dd></div>
                 {item.quote && <div className="sm:col-span-2"><dt className={label}>Quote</dt><dd>{item.quote}</dd></div>}
               </dl>
               {item.photoDriveId && <a className="inline-block mt-4 text-sm underline" href={`https://drive.google.com/file/d/${encodeURIComponent(item.photoDriveId)}/view`} target="_blank" rel="noreferrer">Review private photo in Drive ↗</a>}

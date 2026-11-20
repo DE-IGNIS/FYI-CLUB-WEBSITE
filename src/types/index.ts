@@ -61,8 +61,6 @@ export interface TeamMember {
   badge?: string;
   socialLinks?: {
     linkedin?: string;
-    github?: string;
-    instagram?: string;
   };
 }
 
@@ -76,8 +74,6 @@ export interface TeamSubmission {
   quote: string;
   handle: string;
   socialLinks: {
-    instagram?: string;
-    github?: string;
     linkedin?: string;
   };
   photoUrl?: string;
