@@ -131,7 +131,7 @@ function initializeFreeAdminQueue() {
   syncExistingResponseRows();
 }
 
-/** One-time bootstrap for the initial website owner. Run from the trusted Apps Script project. */
+/** Bootstrap the single primary FYI owner. Safe to rerun after setting INITIAL_ADMIN_EMAIL. */
 function initializeWebsiteAdminOwner() {
   const email = String(PropertiesService.getScriptProperties().getProperty('INITIAL_ADMIN_EMAIL') || '').trim().toLowerCase();
   if (!email) throw new Error('Set INITIAL_ADMIN_EMAIL in Script Properties first.');
@@ -145,14 +145,27 @@ function initializeWebsiteAdminOwner() {
   if (existing.getResponseCode() === 200) {
     const current = JSON.parse(existing.getContentText());
     if (current.fields && current.fields.role && current.fields.role.stringValue === 'owner') {
-      Logger.log('Initial website owner is already registered.');
+      if (current.fields.isPrimaryOwner && current.fields.isPrimaryOwner.booleanValue === true) {
+        Logger.log('Initial FYI owner is already registered.');
+        return;
+      }
+      const promoted = UrlFetchApp.fetch(url + '?updateMask.fieldPaths=isPrimaryOwner', {
+        method: 'patch', contentType: 'application/json',
+        headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
+        payload: JSON.stringify({fields: {isPrimaryOwner: {booleanValue: true}}}),
+        muteHttpExceptions: true
+      });
+      if (promoted.getResponseCode() < 200 || promoted.getResponseCode() >= 300) {
+        throw new Error('Could not mark INITIAL_ADMIN_EMAIL as the primary owner: ' + promoted.getContentText());
+      }
+      Logger.log('Initial website owner marked as the primary FYI owner.');
       return;
     }
     throw new Error('An admin record already exists for INITIAL_ADMIN_EMAIL but it is not an owner. Ask a Firebase project owner to review it.');
   }
   if (existing.getResponseCode() !== 404) throw new Error('Admin lookup failed: ' + existing.getContentText());
   const fields = Object.fromEntries(Object.entries({
-    email, role: 'owner', createdAt: new Date().toISOString(),
+    email, role: 'owner', isPrimaryOwner: true, createdAt: new Date().toISOString(),
     createdByUid: 'initial-owner-setup', createdByEmail: Session.getEffectiveUser().getEmail() || ''
   }).map(([key, value]) => [key, firestoreValue_(value)]));
   const created = UrlFetchApp.fetch(url, {

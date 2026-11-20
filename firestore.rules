@@ -13,29 +13,29 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role in ['owner', 'reviewer'];
     }
 
-    function isOwner() {
+    function isPrimaryOwner() {
       return signedIn()
         && request.auth.token.email is string
         && request.auth.token.email_verified == true
         && exists(/databases/$(database)/documents/adminUsers/$(request.auth.token.email))
-        && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role == 'owner';
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role == 'owner'
+        && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.isPrimaryOwner == true;
     }
 
-    // Allowlist is keyed by normalized email. Only an owner can manage it;
+    // Allowlist is keyed by normalized email. Only the initial FYI owner can manage it;
     // each authenticated user can check only their own access record.
     match /adminUsers/{email} {
       allow get: if signedIn() && request.auth.token.email == email;
-      allow list: if isOwner();
-      allow create, update: if isOwner()
+      allow list: if isPrimaryOwner();
+      allow create, update: if isPrimaryOwner()
         && request.resource.data.keys().hasOnly(['email', 'role', 'createdAt', 'createdByUid', 'createdByEmail'])
         && request.resource.data.keys().hasAll(['email', 'role', 'createdAt', 'createdByUid'])
         && request.resource.data.email == email
-        && request.resource.data.role in ['owner', 'reviewer']
-        && (email != request.auth.token.email
-          || request.resource.data.role == 'owner')
+        && request.resource.data.role == 'reviewer'
+        && email != request.auth.token.email
         && request.resource.data.createdByUid == request.auth.uid
         && request.resource.data.createdAt == request.time;
-      allow delete: if isOwner() && email != request.auth.token.email;
+      allow delete: if isPrimaryOwner() && email != request.auth.token.email;
     }
 
     // Apps Script writes pending submissions through the Firestore REST API.
