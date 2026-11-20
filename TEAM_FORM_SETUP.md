@@ -1,18 +1,22 @@
-# FYI Team Form and Automatic Website Publishing
+# Team Form Publishing Guide
 
-Keep real form IDs, admin emails, and credentials out of this file and out of Git.
+## How publishing works
 
-## Free Spark workflow
+1. A respondent submits the Google Form. The linked response spreadsheet receives the response.
+2. An installed Apps Script form-submit trigger validates the Google-collected VIT Bhopal email, maps the answers, and publishes the profile to Firestore `teamMembers`.
+3. The website reads published `teamMembers` records and shows them on the homepage and Team page. No admin approval is part of this flow.
+4. The script also stores the private response in `teamSubmissions`, writes an audit entry, and records the response in a tracking sheet.
 
-Google Forms collects each profile and stores its uploaded photo in Drive. The installed Apps Script trigger checks the verified respondent email, makes the photo link-viewable, and publishes the profile to public Firestore `teamMembers` immediately. It also records the private response in `teamSubmissions`, writes a tracking row, and adds an audit entry. The `/admin` page monitors the data; it does not approve submissions. Each new response for the same verified email updates that member's existing public profile.
+The member document ID is derived from the verified email. A new response can create or update that email's own profile; it does not select another member's document. Since publication is automatic, **restrict the Google Form to current FYI members**. A VIT Bhopal email alone is the script's identity check, not proof of club membership. Form answers, LinkedIn links, and the photo become public on the website. Each submitted photo is shared as **Anyone with the link — Viewer**; the Drive folder stays private.
 
-This workflow uses Firebase Authentication, Firestore, Apps Script, and Google Drive; it does not require Cloud Functions, Secret Manager, or a billing account.
+## One-time setup
 
-## Apps Script setup
-
-1. In Apps Script, paste the current `scripts/create_team_profile_form.gs` into the project attached to the form. Save it.
-2. In **Project Settings → Script Properties**, set `TEAM_FORM_ID` to the existing form ID and `INITIAL_ADMIN_EMAIL` to the official FYI owner's VIT Bhopal account. `TEAM_ADMIN_SHEET_ID` is created and saved automatically by `initializeFreeAdminQueue`; do not create or enter it manually. Keep the email value in Script Properties, not in Git or source code.
-3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. In the manifest's `oauthScopes`, merge these scopes with any existing entries:
+1. Copy the current `scripts/create_team_profile_form.gs` into the Apps Script project linked to the form, replacing its old code, and save.
+2. In **Project Settings → Script Properties**, set:
+   - `TEAM_FORM_ID`: the ID from the Google Form URL.
+   - `INITIAL_ADMIN_EMAIL`: the official FYI owner's VIT Bhopal email.
+   - `TEAM_ADMIN_SHEET_ID` is created and stored automatically during setup. Do not enter it manually.
+3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. Merge these scopes into its existing `oauthScopes` list:
 
    ```json
    [
@@ -26,36 +30,42 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
    ]
    ```
 
-4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
-5. Run `setupTeamProfilePublishing` once. It adds or marks the account from `INITIAL_ADMIN_EMAIL` as the primary FYI owner, installs the response-sheet trigger, and publishes existing responses. If the official owner was already initialized, it marks that account as primary. Re-running setup is safe and republishes existing rows.
-6. Deploy the current Firestore rules so only the primary FYI owner can manage admins while every listed admin can edit team profiles: `firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl`.
-7. Open `https://<your-site>/admin` and sign in with the official owner Google account.
+4. Ensure the Google account that owns the trigger has Firestore data access in the Firebase project's Google Cloud IAM.
+5. Run **`setupTeamProfilePublishing`** once from the Apps Script editor and grant the requested permissions. It marks the primary owner, creates the tracking sheet if needed, installs the form-submit trigger, and publishes existing response rows. Run it again only to reinstall setup or retry/backfill rows.
+6. Deploy Firestore rules to enforce the admin roles:
 
-## Form requirements
+   ```sh
+   firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl
+   ```
 
-- Set Google Forms to collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents. The automatically collected address from the VIT Bhopal domain is the trusted private identity. If the form also asks for an address as text, that duplicate answer does not control authentication or block a valid submission.
-- Required questions: full name; position; department/team for Lead, Co-Lead, and Core Member; profile photo; specialty (150 characters maximum); LinkedIn; and consent.
-- Optional questions: quote (250 characters maximum) and public handle (30 characters maximum).
-- President, Vice President, Secretary, and Student Coordinator skip the team question. Lead, Co-Lead, and Core Member choose a team.
-- The required file upload question must be titled exactly `Profile photo`.
-- Consent must clearly say that valid submitted profile details, LinkedIn link, and photo are published on the public website immediately after submission. The uploaded photo is shared with anyone who has its Drive link.
+7. Open `/admin` and sign in as the official owner.
 
-## Provision the website admin
+Saving this repository or pushing to GitHub does **not** update the separate Apps Script project. Paste and save the script there. Website hosting and Firestore rules also deploy separately; the GitHub workflow deploys hosting, while the command above deploys rules.
 
-1. Enable both Google and Email/Password in Firebase Authentication and add the production domain to authorized domains.
-2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers the account from `INITIAL_ADMIN_EMAIL` as the first owner.
-3. Open `/admin` on the deployed site and sign in with that Google account.
+## Who can edit what
 
-Any account listed in `adminUsers` can edit public team profiles and read private submissions and audit history. Only the primary FYI owner can add or remove admin accounts; all newly added accounts are regular admins and cannot manage the allowlist. An unlisted account is denied and signed out. Form publishing runs under the trusted Apps Script owner's Google account.
+- **Form respondents:** A valid response creates or updates the public profile associated with the respondent's verified email. Restrict the form to the intended FYI members because this happens without review.
+- **Admins:** Every account on the `adminUsers` allowlist can edit any published profile through `/admin`. Those edits write to Firestore `teamMembers` and appear on the website.
+- **Primary FYI owner:** The account in `INITIAL_ADMIN_EMAIL` can add or remove admins. Newly added admins can edit profiles but cannot manage the allowlist.
+- **Next form response:** A later response for a member updates that member's profile fields and can replace manual admin edits.
+- **Public visitors:** Can read published profiles only. Firestore rules restrict profile writes to admins and the trusted Apps Script account.
 
-The admin page offers Google sign-in, Email/Password sign-in, password-reset email, and email verification. There is no public sign-up; the primary owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). Adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified. Firestore rules enforce verified email and the admin allowlist.
+The admin allowlist does not create Firebase Authentication accounts. If an admin uses email/password, a project owner must first create or link that account in Firebase Authentication. Google sign-in is available for verified VIT Bhopal accounts.
 
-Firebase's built-in Google sign-in can still create an Auth user record when an unlisted person attempts sign-in; the website immediately denies access and signs them out. Preventing even that Auth record from being created requires Firebase Identity Platform blocking functions, which are not part of this Spark-plan setup.
+## Form setup requirements
 
-Base Firebase Authentication on Spark does not provide app-enforced multi-factor authentication. For a free extra sign-in factor, enable 2-Step Verification on the Google account used by the owner. Do not enable SMS authentication if you need to avoid SMS charges.
+- Collect the respondent's verified Google email. The script uses this value; a separate typed email field is ignored for identity.
+- Restrict form access to current FYI members. Also limit to one response per account where appropriate.
+- Required questions: Full name, Position, Department / Team when applicable, Profile photo, Specialty, and consent.
+- The file upload question title must start with `Profile photo`.
+- Keep position and team choices consistent with the allowed website teams: Technical Team, Design & Content, Event Management, Photography, PR & Outreach, and Social Media. Executive positions do not require a team choice.
+- Consent must clearly say submitted profile details, LinkedIn link, and photo are published immediately. Photos are shared by link.
 
-## Photo privacy and audit limits
+## Troubleshooting
 
-Google Forms places uploads in Drive. On each valid response, the script sets that individual photo to **Anyone with the link — Viewer** and publishes its image URL in the public team profile. Only the submitted photo is shared; the upload folder is not made public. This is required for visitors to see the portrait without signing in.
+- **Response is in the sheet but not on the site:** Open Apps Script **Executions** and inspect the form-submit run. After correcting a setup or permission error, run `setupTeamProfilePublishing` once to retry existing rows.
+- **Drive permission error:** Confirm the `drive` OAuth scope is present, save the manifest, refresh the editor, run setup, and grant Drive access. If the school Workspace blocks external sharing, ask its administrator; the site cannot load a restricted photo for public visitors.
+- **Profile appears without a photo:** Confirm the Drive file is set to Anyone with the link — Viewer, then refresh the Team page. The form trigger applies this permission to each valid response.
+- **Admin cannot manage accounts:** Confirm the correct `INITIAL_ADMIN_EMAIL`, run `setupTeamProfilePublishing`, then deploy the Firestore rules using the command above.
 
-Automatic profile publishes are appended to Firestore `auditLogs`. Apps Script uses its trusted Google account's Firestore IAM access to update the public profile and private submission record. Firebase project owners and the Apps Script owner can alter data outside the website, so keep those accounts restricted. This Spark-plan setup does not provide server-side session-duration tracking.
+The workflow uses Google Forms, Sheets, Apps Script, Drive, Firebase Authentication, and Firestore. It does not require Cloud Functions or a paid Firebase plan for ordinary club usage. Google service quotas and Workspace sharing policies still apply.
