@@ -37,6 +37,23 @@ Built with a bold **Two26Studio-inspired tactile neo-brutalist aesthetic**, the 
 
 Set `VITE_RECAPTCHA_SITE_KEY` alongside the Firebase web app values in `.env`. Register the production domain (and any development domain) for that reCAPTCHA v3 key. Deploy the restrictive Firestore rules with `firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl`, then enable **App Check enforcement for Cloud Firestore** in Firebase Console. The rules permit validated creates in `applications` only and deny client reads, edits, and deletes. App Check enforcement is required to reject unverified public clients; keep it enabled after verifying submissions work.
 
+### Google Form team profile approvals
+
+The Google Form response spreadsheet is the intake source. Apps Script sends each response to the private Firestore `teamSubmissions` collection, and an allowlisted administrator reviews it at `/admin`. Approvals publish the profile to `teamMembers`; the response spreadsheet alone does not update the website. This workflow uses Firebase Spark, Firestore, Google Apps Script, and Drive. The Apps Script project is separate from this Git repository, so pushing code does not update the script automatically.
+
+Copy `scripts/create_team_profile_form.gs` into the Apps Script project attached to the form and save it. Keep `TEAM_FORM_ID` and `TEAM_ADMIN_SHEET_ID` in that project's Script Properties. The script's verified Google-collected email is the identity used for the submission and must end in `@vitbhopal.ac.in`; a separate typed email answer is ignored if it differs.
+
+#### Apps Script functions
+
+| Function | Purpose | When to run |
+| --- | --- | --- |
+| `onTeamProfileSubmit(e)` | Runs from the form response spreadsheet trigger. It validates the collected VIT email, maps profile answers, writes a pending document to Firestore, and records intake logs. | Automatic only. Do not run manually; it needs the trigger event. |
+| `initializeFreeAdminQueue()` | Creates or opens the private queue spreadsheet, sets its Script Property, replaces the old submission trigger, installs the current trigger, and imports existing response rows. | Run during setup or to reinstall the trigger. Safe to rerun. |
+| `initializeWebsiteAdminOwner()` | Adds `sumit.24bce11520@vitbhopal.ac.in` as the initial `owner` in Firestore `adminUsers`. | Run once to bootstrap the first website administrator. |
+| `syncExistingResponseRows()` | Imports rows already present in the linked response spreadsheet into the private queue and Firestore. It preserves existing review decisions. | Run to retry or backfill existing responses; inspect the Apps Script execution log for imported and failed row counts. |
+
+For initial setup, run `initializeWebsiteAdminOwner` once, then `initializeFreeAdminQueue`. New submissions are processed automatically by the installed trigger. If a previous response is still missing, run `syncExistingResponseRows`. See [TEAM_FORM_SETUP.md](TEAM_FORM_SETUP.md) for the form, permissions, and setup requirements.
+
 ---
 
 ## 📁 3. File & Directory Architecture
