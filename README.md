@@ -48,11 +48,9 @@ Copy `scripts/create_team_profile_form.gs` into the Apps Script project attached
 | Function | Purpose | When to run |
 | --- | --- | --- |
 | `onTeamProfileSubmit(e)` | Runs from the form response spreadsheet trigger. It validates the collected VIT email, maps profile answers, immediately publishes to `teamMembers`, records the response in `teamSubmissions`, and logs the publish. | Automatic only. Do not run manually; it needs the trigger event. |
-| `initializeFreeAdminQueue()` | Creates or opens the private tracking spreadsheet, sets its Script Property, replaces the old submission trigger, installs the auto-publish trigger, and republishes existing response rows. | Run during setup, to authorize new scopes, or to reinstall the trigger. Safe to rerun. |
-| `initializeWebsiteAdminOwner()` | Adds or marks the account configured in `INITIAL_ADMIN_EMAIL` as the single primary FYI owner in `adminUsers`. | Run once to bootstrap; safe to rerun to mark the existing official owner as primary. |
-| `syncExistingResponseRows()` | Publishes rows already present in the linked response spreadsheet to the website and syncs the tracking sheet. | Run to retry or backfill existing responses; inspect the Apps Script execution log for published and failed row counts. |
+| `setupTeamProfilePublishing()` | Adds or marks the primary FYI owner, installs the form-submit trigger, and publishes existing form responses. | Run once after setup or to retry/reinstall everything. Safe to rerun. |
 
-For initial setup, run `initializeWebsiteAdminOwner` once, then `initializeFreeAdminQueue`. New submissions publish automatically through the installed trigger. If a previous response is still missing, run `syncExistingResponseRows`. See [TEAM_FORM_SETUP.md](TEAM_FORM_SETUP.md) for the form, permissions, and setup requirements.
+For initial setup, run `setupTeamProfilePublishing()` once. New submissions publish automatically through the installed trigger; there is no per-submission admin step. See [TEAM_FORM_SETUP.md](TEAM_FORM_SETUP.md) for the form, permissions, and setup requirements.
 
 ---
 

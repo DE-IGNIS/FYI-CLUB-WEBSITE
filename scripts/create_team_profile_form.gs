@@ -3,7 +3,7 @@ function onTeamProfileSubmit(e) {
   if (!e || (!e.response && !e.namedValues)) throw new Error('Use the installed Form response-sheet trigger.');
   const props = PropertiesService.getScriptProperties();
   const sheetId = props.getProperty('TEAM_ADMIN_SHEET_ID');
-  if (!sheetId) throw new Error('Run initializeFreeAdminQueue first.');
+  if (!sheetId) throw new Error('Run setupTeamProfilePublishing first.');
 
   const answers = {};
   if (e.response) {
@@ -105,7 +105,13 @@ function onTeamProfileSubmit(e) {
   return true;
 }
 
-function initializeFreeAdminQueue() {
+/** One-time setup: register the official owner, install the trigger, and publish existing responses. */
+function setupTeamProfilePublishing() {
+  initializeWebsiteAdminOwner_();
+  initializeFreeAdminQueue_();
+}
+
+function initializeFreeAdminQueue_() {
   const props = PropertiesService.getScriptProperties();
   const existingId = props.getProperty('TEAM_ADMIN_SHEET_ID');
   const ss = existingId ? SpreadsheetApp.openById(existingId) : SpreadsheetApp.create('FYI Team Profile Admin Queue');
@@ -128,11 +134,11 @@ function initializeFreeAdminQueue() {
   Logger.log('Form response spreadsheet: ' + SpreadsheetApp.openById(responseSheetId).getUrl());
   // Also publish responses submitted before this trigger was installed. This
   // is safe to repeat: response and member IDs are stable, so latest data wins.
-  syncExistingResponseRows();
+  syncExistingResponseRows_();
 }
 
 /** Bootstrap the single primary FYI owner. Safe to rerun after setting INITIAL_ADMIN_EMAIL. */
-function initializeWebsiteAdminOwner() {
+function initializeWebsiteAdminOwner_() {
   const email = String(PropertiesService.getScriptProperties().getProperty('INITIAL_ADMIN_EMAIL') || '').trim().toLowerCase();
   if (!email) throw new Error('Set INITIAL_ADMIN_EMAIL in Script Properties first.');
   if (!/^[^\s@]+@vitbhopal\.ac\.in$/.test(email)) {
@@ -181,7 +187,7 @@ function initializeWebsiteAdminOwner() {
 }
 
 /** Backfill or republish all responses already present in the linked spreadsheet. */
-function syncExistingResponseRows() {
+function syncExistingResponseRows_() {
   const formId = PropertiesService.getScriptProperties().getProperty('TEAM_FORM_ID');
   if (!formId) throw new Error('Set TEAM_FORM_ID in Script Properties first.');
   const form = FormApp.openById(formId);
@@ -190,10 +196,10 @@ function syncExistingResponseRows() {
   const spreadsheet = SpreadsheetApp.openById(responseSheetId);
   const responseTab = findFormResponseSheet_(spreadsheet);
   const queueId = PropertiesService.getScriptProperties().getProperty('TEAM_ADMIN_SHEET_ID');
-  if (!queueId) throw new Error('Run initializeFreeAdminQueue first.');
+  if (!queueId) throw new Error('Run setupTeamProfilePublishing first.');
   const queueSpreadsheet = SpreadsheetApp.openById(queueId);
   const queue = queueSpreadsheet.getSheetByName('Submissions');
-  if (!queue) throw new Error('The private queue has no Submissions sheet. Run initializeFreeAdminQueue again.');
+  if (!queue) throw new Error('The private queue has no Submissions sheet. Run setupTeamProfilePublishing again.');
   const rows = responseTab.getDataRange().getDisplayValues();
   if (rows.length < 2) { Logger.log('No existing response rows to sync.'); return; }
   const headers = rows[0];
