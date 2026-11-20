@@ -82,8 +82,8 @@ FYI CLUB WEBISTE/
 │   │       ├── CustomCursor.tsx          # Dual-ring cursor with magnetic proximity & card morphing
 │   │       └── index.ts
 │   │
-│   ├── data/                             # Central single source of truth (SSOT)
-│   │   └── clubData.ts                   # Club metadata, projects, activities, events, team roster & FAQs
+│   ├── data/                             # Central metadata and published profile mapping
+│   │   └── clubData.ts                   # Club metadata, projects, activities, events, and FAQs
 │   │
 │   ├── hooks/                            # Custom animation and sensor hooks
 │   │   ├── use3DTilt.ts                  # Gyroscopic 3D perspective card tilt ([data-tilt])
@@ -119,7 +119,7 @@ FYI CLUB WEBISTE/
 │   │   ├── projects/
 │   │   │   └── ProjectsPage.tsx          # Filterable build showcase with hardware/software tags
 │   │   ├── team/
-│   │   │   └── TeamPage.tsx              # Complete 14-member roster & 6 squad domain breakdowns
+│   │   │   └── TeamPage.tsx              # Approved Firestore profiles and the six team names
 │   │   └── index.ts                      # Clean barrel export for all route views
 │   │
 │   ├── types/                            # Strict TypeScript interface contracts
@@ -146,7 +146,7 @@ FYI CLUB WEBISTE/
 
 ## 👥 4. Organizational Squad Structure
 
-The team roster in `src/data/clubData.ts` and `src/pages/team/TeamPage.tsx` mirrors the true structure of the FYI Club:
+The Team page and homepage load member profiles only from the published Firestore `teamMembers` collection. They do not use a bundled sample roster. The six team names mirror the FYI Club's structure:
 
 ```
                       [ EXECUTIVE COUNCIL ]
