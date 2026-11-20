@@ -36,6 +36,9 @@ function onTeamProfileSubmit(e) {
   const idMatch = uploadText.match(/[-\w]{25,}/);
   const fileId = idMatch ? idMatch[0] : uploadText;
   if (!fileId) throw new Error('Required profile photo is missing.');
+  // The uploaded profile photo is intended for the public roster after review.
+  // Link viewing lets the website load it through a normal image request.
+  DriveApp.getFileById(fileId).setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   const submittedAt = String(answer('Timestamp') || (e.values && e.values[0]) || new Date().toISOString());
   const responseId = e.response ? e.response.getId() : Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, submittedAt + '|' + verifiedEmail));
   const ss = SpreadsheetApp.openById(sheetId);
@@ -51,7 +54,7 @@ function onTeamProfileSubmit(e) {
   const displayGroup = isExecutive || position === 'Lead' || position === 'Co-Lead' ? 'Executive Council' : department;
   const submissionId = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, responseId).map(b => ('0'+((b+256)%256).toString(16)).slice(-2)).join('');
   const memberId = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, verifiedEmail).map(b => ('0'+((b+256)%256).toString(16)).slice(-2)).join('');
-  const privatePhotoUrl = 'https://drive.google.com/file/d/' + encodeURIComponent(fileId) + '/view';
+  const privatePhotoUrl = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w800';
   const profile = {
     submissionId, memberId, responseId, email: verifiedEmail, name, position,
     department, team: isExecutive ? '' : department, displayGroup,

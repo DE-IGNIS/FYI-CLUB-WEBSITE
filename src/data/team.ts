@@ -41,6 +41,7 @@ export function mapPublishedTeamMember(id: string, raw: Record<string, unknown>)
     roleTag: position.toUpperCase(),
     roleBg: 'bg-brand-orange text-white',
     avatarBg: 'bg-brand-cyan',
+    photoUrl: typeof raw.photoUrl === 'string' ? raw.photoUrl : undefined,
     textColor: 'text-primary',
     specialty: String(raw.specialty || ''),
     quote: String(raw.quote || ''),

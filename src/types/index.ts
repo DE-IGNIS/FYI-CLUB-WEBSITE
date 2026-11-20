@@ -54,6 +54,7 @@ export interface TeamMember {
   roleTag: string;
   roleBg: string;
   avatarBg: string;
+  photoUrl?: string;
   textColor: string;
   specialty: string;
   quote: string;

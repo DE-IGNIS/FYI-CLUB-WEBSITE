@@ -65,6 +65,7 @@ export const GuildTeam: React.FC = () => {
               <span className={`font-headline text-5xl font-black ${member.textColor}`}>
                 {member.initials}
               </span>
+              {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
               <div
                 className={`absolute bottom-1.5 left-1.5 ${member.roleBg} font-mono text-[9px] font-black px-1.5 py-0.5 border border-primary`}
               >
