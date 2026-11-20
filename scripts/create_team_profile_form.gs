@@ -44,8 +44,6 @@ function onTeamProfileSubmit(e) {
   const specialty = String(answer('Specialty') || '').trim();
   const quote = String(answer('Quote for your profile') || '').trim();
   const handle = String(answer('Public handle') || '').trim();
-  const instagram = String(answer('Instagram profile') || '').trim();
-  const github = String(answer('GitHub profile') || '').trim();
   const linkedin = String(answer('LinkedIn profile') || '').trim();
   const isExecutive = ['President','Vice President','Secretary','Student Coordinator'].includes(position);
   const teamNames = {'Photography Team':'Photography','PR & Outreach Team':'PR & Outreach','Social Media Team':'Social Media','Design & Content Team':'Design & Content','Event Management Team':'Event Management'};
@@ -58,7 +56,7 @@ function onTeamProfileSubmit(e) {
     submissionId, memberId, responseId, email: verifiedEmail, name, position,
     department, team: isExecutive ? '' : department, displayGroup,
     specialty, quote, handle,
-    socialLinks: {instagram, github, linkedin},
+    socialLinks: {linkedin},
     photoDriveId: fileId, photoUrl: privatePhotoUrl,
     status: 'pending', submittedAt
   };
@@ -73,9 +71,15 @@ function onTeamProfileSubmit(e) {
     alreadyQueued = responseIds.includes(responseId);
   }
   if (alreadyQueued) return firestoreCreated;
-  queue.appendRow([new Date(submittedAt), responseId, verifiedEmail, name, position, team,
-    specialty, quote, handle, instagram, github, linkedin,
-    fileId, 'Pending', '', '', '']);
+  const rowByHeader = {
+    'Submitted At': new Date(submittedAt), 'Response ID': responseId,
+    'Private Email': verifiedEmail, 'Full Name': name, Position: position,
+    'Department / Team': team, Specialty: specialty, Quote: quote, Handle: handle,
+    LinkedIn: linkedin, 'Photo Drive ID': fileId, 'Website Review Status': 'Pending',
+    'Reviewed At': '', 'Reviewed By': '', 'Sync Error': ''
+  };
+  const queueHeaders = queue.getRange(1, 1, 1, queue.getLastColumn()).getDisplayValues()[0];
+  queue.appendRow(queueHeaders.map((header) => Object.prototype.hasOwnProperty.call(rowByHeader, header) ? rowByHeader[header] : ''));
   appendAudit_(ss, 'submission_received', responseId, verifiedEmail);
   return firestoreCreated;
 }
@@ -86,7 +90,7 @@ function initializeFreeAdminQueue() {
   const ss = existingId ? SpreadsheetApp.openById(existingId) : SpreadsheetApp.create('FYI Team Profile Admin Queue');
   let queue = ss.getSheetByName('Submissions');
   if (!queue) queue = ss.getSheets()[0].setName('Submissions');
-  if (queue.getLastRow() === 0) queue.appendRow(['Submitted At','Response ID','Private Email','Full Name','Position','Department / Team','Specialty','Quote','Handle','Instagram','GitHub','LinkedIn','Photo Drive ID','Website Review Status','Reviewed At','Reviewed By','Sync Error']);
+  if (queue.getLastRow() === 0) queue.appendRow(['Submitted At','Response ID','Private Email','Full Name','Position','Department / Team','Specialty','Quote','Handle','LinkedIn','Photo Drive ID','Website Review Status','Reviewed At','Reviewed By','Sync Error']);
   let audit = ss.getSheetByName('Audit Log');
   if (!audit) audit = ss.insertSheet('Audit Log');
   if (audit.getLastRow() === 0) audit.appendRow(['Time','Action','Response ID','Member','Actor']);

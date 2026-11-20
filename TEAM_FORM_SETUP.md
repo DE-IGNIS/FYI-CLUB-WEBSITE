@@ -34,10 +34,10 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 
 - Set Google Forms to collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents. The automatically collected address from the VIT Bhopal domain is the trusted private identity. If the form also asks for an address as text, that duplicate answer does not control authentication or block a valid submission.
 - Required questions: full name; position; department/team for Lead, Co-Lead, and Core Member; profile photo; specialty (150 characters maximum); LinkedIn; and consent.
-- Optional questions: quote (250 characters maximum), public handle (30 characters maximum), Instagram, and GitHub.
+- Optional questions: quote (250 characters maximum) and public handle (30 characters maximum).
 - President, Vice President, Secretary, and Student Coordinator skip the team question. Lead, Co-Lead, and Core Member choose a team.
 - The required file upload question must be titled exactly `Profile photo`.
-- Consent must say the submitted profile details and social links can be displayed after approval. Photo consent should describe private review and website use only if the site will actually display it.
+- Consent must say the submitted profile details and LinkedIn link can be displayed after approval. Photo consent should describe private review and website use only if the site will actually display it.
 
 ## Provision the website admin
 
