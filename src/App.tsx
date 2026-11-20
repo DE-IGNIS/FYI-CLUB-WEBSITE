@@ -104,13 +104,22 @@ function ScrollToTop() {
 
 // ─── Main App ──────────────────────────────────────────────────────────────
 export function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+function AppContent() {
   // Keep the overlay's playback and lift phases in sync with the page content.
   const [introKey, setIntroKey] = useState(0);
   const [introStage, setIntroStage] = useState<'playing' | 'lifting' | 'complete'>('playing');
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [prefilledEvent, setPrefilledEvent] = useState<string | undefined>(undefined);
   const [soundOn, setSoundOn] = useState(isSoundEnabled);
-  const isAdminRoute = /^\/admin(?:\/|$)/.test(window.location.pathname);
+  const location = useLocation();
+  const isAdminRoute = /^\/admin(?:\/|$)/.test(location.pathname);
 
   const triggerLogoIntro = useCallback(() => {
     setIntroKey((prev) => prev + 1);
@@ -153,21 +162,18 @@ export function App() {
   // public site's intro, cursor, navigation, footer, join modal, and sound UI.
   if (isAdminRoute) {
     return (
-      <BrowserRouter>
-        <ErrorBoundary>
-          <RouteMetadata />
-          <Routes>
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="*" element={<AdminPage />} />
-          </Routes>
-        </ErrorBoundary>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <RouteMetadata />
+        <Routes>
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={<AdminPage />} />
+        </Routes>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
+    <ErrorBoundary>
         <RouteMetadata />
         <ScrollToTop />
         <RouteChangeListener onTriggerIntro={triggerLogoIntro} />
@@ -263,8 +269,7 @@ export function App() {
             </button>
           </div>
         </div>
-      </ErrorBoundary>
-    </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
