@@ -17,9 +17,12 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  where,
   writeBatch,
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../../lib/firebaseClient';
+import { mapPublishedTeamMember } from '../../data/team';
+import type { TeamMember } from '../../types';
 
 type Access = 'checking' | 'signed-out' | 'denied' | 'allowed';
 type AdminRecord = { id: string; email?: string; role?: 'owner' | 'reviewer' };
@@ -65,6 +68,7 @@ export const AdminPage: React.FC = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
   const [adminRecords, setAdminRecords] = useState<AdminRecord[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'owner' | 'reviewer'>('reviewer');
@@ -123,6 +127,12 @@ export const AdminPage: React.FC = () => {
     const stopLogs = onSnapshot(query(collection(db, 'auditLogs'), orderBy('occurredAt', 'desc')), (snapshot) => {
       setAuditLogs(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as AuditEntry)));
     }, () => setMessage('Could not load the audit history.'));
+    const stopMembers = onSnapshot(query(collection(db, 'teamMembers'), where('isPublished', '==', true)), (snapshot) => {
+      setTeamMembers(snapshot.docs
+        .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
+        .filter((member): member is TeamMember => member !== null)
+        .sort((a, b) => a.name.localeCompare(b.name)));
+    }, () => setMessage('Could not load published team members. Check Firestore rules.'));
     let stopAdmins: () => void = () => {};
     if (isOwner) {
       stopAdmins = onSnapshot(collection(db, 'adminUsers'), (snapshot) => {
@@ -131,7 +141,7 @@ export const AdminPage: React.FC = () => {
           .sort((a, b) => (a.email || '').localeCompare(b.email || '')));
       }, () => setMessage('Could not load the admin allowlist.'));
     }
-    return () => { stopSubmissions(); stopLogs(); stopAdmins(); };
+    return () => { stopSubmissions(); stopLogs(); stopMembers(); stopAdmins(); };
   }, [access, isOwner]);
 
   const pending = useMemo(() => submissions.filter((item) => item.status === 'pending'), [submissions]);
@@ -255,6 +265,9 @@ export const AdminPage: React.FC = () => {
           socialLinks: {
             linkedin: cleanUrl(submission.socialLinks?.linkedin),
           },
+          photoUrl: submission.photoUrl || (submission.photoDriveId
+            ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(submission.photoDriveId)}&sz=w800`
+            : ''),
           isPublished: true,
           updatedAt: serverTimestamp(),
         };
@@ -286,7 +299,7 @@ export const AdminPage: React.FC = () => {
           <div>
             <p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">FYI / PRIVATE CONSOLE</p>
             <h1 className="text-3xl sm:text-4xl font-black uppercase mt-1">Team approvals</h1>
-            <p className="mt-2 text-xs text-[#6E6C65]">Private review queue · published profiles exclude email and photo upload data</p>
+            <p className="mt-2 text-xs text-[#6E6C65]">Private review queue · approved profile photos appear on the public website</p>
           </div>
           {user && <button onClick={() => void handleSignOut()} className="border-2 border-[#111111] bg-white px-4 py-2 text-xs font-bold uppercase">Sign out</button>}
         </header>
@@ -346,6 +359,22 @@ export const AdminPage: React.FC = () => {
             <div className={panel}><span className={label}>Waiting for review</span><strong className="mt-2 block text-3xl">{pending.length}</strong></div>
             <div className={panel}><span className={label}>All submissions</span><strong className="mt-2 block text-3xl">{submissions.length}</strong></div>
           </section>
+          <section className={`${panel} mb-8`}>
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#111111]/20 pb-3 mb-4">
+              <div><p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Public roster</p><h2 className="text-2xl font-black uppercase">Team members <span className="text-base">({teamMembers.length})</span></h2></div>
+              <p className="text-xs">Loaded from <code>teamMembers</code></p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {teamMembers.map((member) => <article key={member.id} className="flex items-center gap-3 border border-[#111111]/20 p-3">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-[#111111] bg-[#F6F3EB] flex items-center justify-center font-bold">
+                  <span>{member.initials}</span>
+                  {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                </div>
+                <div className="min-w-0"><strong className="block truncate uppercase">{member.name}</strong><p className="text-xs">{member.position} · {member.department}</p><p className="text-[10px] uppercase text-[#6E6C65]">Published</p></div>
+              </article>)}
+              {!teamMembers.length && <p className="text-sm">No published team members found.</p>}
+            </div>
+          </section>
           <div className="flex flex-wrap justify-between items-end gap-3 border-b-2 border-[#111111] pb-3 mb-5">
             <div><p className="text-xs uppercase tracking-widest text-[#FF4800] font-bold">Form submissions</p><h2 className="text-2xl font-black uppercase">Review queue</h2></div>
             <button onClick={() => setShowHistory((value) => !value)} className="text-xs font-bold uppercase underline">{showHistory ? 'Hide history' : 'Show reviewed profiles'}</button>
@@ -366,7 +395,7 @@ export const AdminPage: React.FC = () => {
                   : '—'}</dd></div>
                 {item.quote && <div className="sm:col-span-2"><dt className={label}>Quote</dt><dd>{item.quote}</dd></div>}
               </dl>
-              {item.photoDriveId && <a className="inline-block mt-4 text-sm underline" href={`https://drive.google.com/file/d/${encodeURIComponent(item.photoDriveId)}/view`} target="_blank" rel="noreferrer">Review private photo in Drive ↗</a>}
+              {item.photoDriveId && <a className="inline-block mt-4 text-sm underline" href={`https://drive.google.com/file/d/${encodeURIComponent(item.photoDriveId)}/view`} target="_blank" rel="noreferrer">Review submitted photo in Drive ↗</a>}
               {item.status === 'pending' && <div className="flex flex-wrap gap-3 mt-6">
                 <button disabled={busyId === item.id} onClick={() => void review(item, 'approved')} className="bg-[#111111] text-white px-4 py-2 text-xs font-bold uppercase disabled:opacity-50">Approve &amp; publish</button>
                 <button disabled={busyId === item.id} onClick={() => void review(item, 'rejected')} className="border-2 border-[#111111] px-4 py-2 text-xs font-bold uppercase disabled:opacity-50">Reject</button>
