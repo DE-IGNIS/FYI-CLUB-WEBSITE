@@ -14,7 +14,9 @@
 - Website reviewers can read submissions and make a one-time pending-to-approved/rejected transition. They cannot change submitted fields or delete submissions.
 - Website-created audit entries require the authenticated actor UID and a server timestamp; clients cannot edit/delete entries.
 - Admin roles are stored in `adminUsers/{normalizedEmail}`. The initial owner is seeded by the trusted Apps Script setup; owners can add/remove later VIT Bhopal emails from `/admin`.
+- Admin access requires verified email and a TOTP second factor. Firestore rules inspect the Firebase ID token's second-factor claim, so the UI check is backed by the database rules.
 - Google sign-in may create an Auth account before the app checks the allowlist. An unlisted account is immediately denied and signed out, and Firestore rules give it no team/admin data access. Blocking the Auth record itself needs Identity Platform blocking functions, outside this Spark workflow.
+- TOTP requires upgrading Firebase Authentication to Identity Platform and enabling the TOTP provider. It uses an authenticator app rather than SMS; on Spark the upgraded Auth project has a 3,000 daily-active-user limit for most providers.
 - Apps Script writes through the owner's Google OAuth/IAM identity, which bypasses Firestore Security Rules. Keep the script owner and project IAM access restricted. Google project owners can still alter data or rules outside the website.
 
 ## Photo handling
