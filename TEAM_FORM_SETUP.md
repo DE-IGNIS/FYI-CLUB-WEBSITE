@@ -1,19 +1,18 @@
-# FYI Team Form Setup
+# FYI Team Form and Website Approval Setup
 
-Keep this file local. Do not put actual secrets in it.
+Keep real form IDs, admin emails, and credentials out of this file and out of Git.
 
-## Apps Script trigger
+## Free Spark workflow
 
-The form-submit trigger is installed for the existing form. Its form ID is already stored as the `TEAM_FORM_ID` Script Property.
+Google Forms collects the profile update and stores the uploaded photo privately in Drive. Apps Script checks the verified respondent email, then writes a private pending record to Firestore `teamSubmissions`. The website's `/admin` page signs in with Google and lets a registered admin approve or reject the request. Approval writes public profile fields to `teamMembers`; the verified email and Drive photo ID stay in the private submission. Rejections and approvals appear in the website audit log. The response spreadsheet remains an intake backup and cannot publish profiles.
 
-## Free Spark-plan flow
+This workflow uses Firebase Authentication, Firestore, Apps Script, and Google Drive; it does not require Cloud Functions, Secret Manager, or a billing account.
 
-This setup does not use Cloud Functions, Secret Manager, or a billing account. Form submissions are held in a private Google Sheet. The Tech Lead approves/rejects by editing the Status cell; an Apps Script trigger writes approved public fields to Firestore and records the decision in the Sheet's Audit Log tab.
+## Apps Script setup
 
-1. In Apps Script, run `initializeFreeAdminQueue`. It reuses or creates the private queue and installs a submit trigger on the Form's linked response spreadsheet.
-2. Run `installQueueEditTrigger` once. Keep the queue restricted to trusted admins.
-3. Run `syncExistingResponseRows` once to backfill responses already present in the linked Form response spreadsheet. It skips email addresses already in the queue, so it is safe to rerun.
-4. In Apps Script **Project Settings**, enable **Show `appsscript.json` manifest file**. Add these scopes to the manifest's `oauthScopes` array (merge with any existing scopes):
+1. In Apps Script, paste the current `scripts/create_team_profile_form.gs` into the project attached to the form. Save it.
+2. In **Project Settings → Script Properties**, keep `TEAM_FORM_ID` set to the existing form ID. Keep `TEAM_ADMIN_SHEET_ID` set to the private queue sheet ID already created for the form.
+3. In **Project Settings**, enable **Show `appsscript.json` manifest file**. In the manifest's `oauthScopes`, merge these scopes with any existing entries:
 
    ```json
    [
@@ -21,28 +20,37 @@ This setup does not use Cloud Functions, Secret Manager, or a billing account. F
      "https://www.googleapis.com/auth/spreadsheets",
      "https://www.googleapis.com/auth/drive",
      "https://www.googleapis.com/auth/script.external_request",
+     "https://www.googleapis.com/auth/script.scriptapp",
      "https://www.googleapis.com/auth/datastore"
    ]
    ```
 
-   The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. If it is already project owner, no additional role is needed. Reauthorize Apps Script when prompted.
-5. Submit a test response. The row appears as Pending. Change its status cell to exactly `Approved` or `Rejected`. Approval publishes a Firestore profile and makes the photo's Drive link viewable to anyone, as covered by the form consent.
+4. The Google account that owns the trigger must have Firestore data access in the Firebase project's Google Cloud IAM. Reauthorize the script when prompted. Restrict Apps Script editors to trusted administrators.
+5. Run `initializeWebsiteAdminOwner` once. It adds `sumit.24bce11520@vitbhopal.ac.in` as the initial owner in Firestore `adminUsers`.
+6. Run `initializeFreeAdminQueue`, then `syncExistingResponseRows` once to send current response rows into Firestore. New submissions sync automatically through the response-sheet trigger installed by initialization.
+7. Submit one test response and confirm it appears at `https://<your-site>/admin` after signing in with the owner email.
 
-The Form submit trigger's script uses the verified respondent email and checks it against the private email answer. Do not share the queue Sheet or upload folder publicly. Keep Apps Script editors limited to trusted admins.
+## Form requirements
 
-## Form checks before testing
+- Collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents.
+- Required questions: full name; position; department/team for Lead, Co-Lead, and Core Member; profile photo; specialty (150 characters maximum); LinkedIn; and consent.
+- Optional questions: quote (250 characters maximum), public handle (30 characters maximum), Instagram, and GitHub.
+- President, Vice President, Secretary, and Student Coordinator skip the team question. Lead, Co-Lead, and Core Member choose a team.
+- The required file upload question must be titled exactly `Profile photo`.
+- Consent must say the submitted profile details and social links can be displayed after approval. Photo consent should describe private review and website use only if the site will actually display it.
 
-- Keep **Collect email addresses** enabled and verified.
-- Keep **Limit to 1 response** enabled.
-- The file upload question must be required and titled exactly `Profile photo`.
-- Position branching: President, Vice President, Secretary, and Student Coordinator skip the Department / Team section; Lead, Co-Lead, and Core Member go through it.
-- Consent should require all three checkbox choices.
-- Restrict access to the intended respondents. Keep the response Sheet and Drive upload folder private.
+## Provision the website admin
 
-## Photo handling
+1. Enable Google as a sign-in provider in Firebase Authentication and add the production domain to authorized domains.
+2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers `sumit.24bce11520@vitbhopal.ac.in` as the first owner.
+3. Open `/admin` on the deployed site and sign in with that Google account.
 
-Google Forms file upload stores the original in Drive. This no-billing workflow does not automatically compress it; ask members to upload an already compressed image. The photo remains private until the admin approves the profile, at which point the script enables link viewing for the photo.
+Only accounts with `owner` or `reviewer` in `adminUsers` can read submissions, approve/reject them, or inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out.
 
-## Admin access
+Firebase's built-in Google sign-in can still create an Auth user record when an unlisted person attempts sign-in; the website immediately denies access and signs them out. Preventing even that Auth record from being created requires Firebase Identity Platform blocking functions, which are not part of this Spark-plan setup.
 
-The admin approval UI is the private Google Sheet. The website reads published Firestore profiles; the `/admin` Cloud Functions console is not used in the Spark workflow.
+## Photo privacy and audit limits
+
+Google Forms places uploads in Drive. This website approval flow keeps that file private and provides an admin-only Drive review link; the existing Team page currently displays initials, not the uploaded image. The photo is not copied into public `teamMembers`. If you later want approved portraits visible, add an explicit publication step and public image hosting policy first; do not make the whole upload folder public.
+
+Approvals/rejections are appended to Firestore `auditLogs` with Firebase server timestamps and cannot be edited by the website client. Apps Script uses its trusted Google account's Firestore IAM access to create pending records and intake logs. Firebase project owners and the Apps Script owner can still alter data outside the website, so keep those accounts restricted. This Spark-plan setup does not provide server-side session-duration tracking.
