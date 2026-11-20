@@ -1,10 +1,33 @@
-import React from 'react';
-import { TEAM_MEMBERS } from '../../../data/clubData';
+import React, { useEffect, useState } from 'react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { mapPublishedTeamMember } from '../../../data/team';
+import { db } from '../../../lib/firebaseClient';
+import type { TeamMember } from '../../../types';
 import { Link } from 'react-router-dom';
 
 export const GuildTeam: React.FC = () => {
-  // Feature the President, Vice President, Technical Lead, and Design Lead on the homepage.
-  const featuredMembers = TEAM_MEMBERS.slice(0, 4);
+  const [featuredMembers, setFeaturedMembers] = useState<TeamMember[]>([]);
+  const [teamCount, setTeamCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true)))
+      .then((snapshot) => {
+        if (!active) return;
+        const publishedMembers = snapshot.docs
+          .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
+          .filter((member): member is TeamMember => member !== null);
+        setTeamCount(publishedMembers.length);
+        setFeaturedMembers(publishedMembers.slice(0, 4));
+      })
+      .catch(() => {
+        if (active) {
+          setTeamCount(0);
+          setFeaturedMembers([]);
+        }
+      });
+    return () => { active = false; };
+  }, []);
 
   return (
     <section className="w-full max-w-7xl mx-auto px-4 md:px-8 py-20 border-b-2 border-primary reveal-on-scroll" id="guild">
@@ -70,12 +93,26 @@ export const GuildTeam: React.FC = () => {
 
             <div className="mt-auto font-mono text-xs text-brand-muted flex items-center justify-between border-t border-primary/20 pt-2">
               <span>{member.handle}</span>
-              <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">
-                arrow_outward
-              </span>
+              {member.socialLinks?.linkedin && (
+                <a
+                  href={member.socialLinks.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Explore ${member.name}'s LinkedIn profile`}
+                  title="Explore LinkedIn profile"
+                  className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform"
+                >
+                  arrow_outward
+                </a>
+              )}
             </div>
           </div>
         ))}
+        {featuredMembers.length === 0 && (
+          <p className="sm:col-span-2 lg:col-span-4 border-2 border-primary bg-white p-6 text-center font-mono text-sm font-bold uppercase">
+            Approved team profiles will appear here.
+          </p>
+        )}
       </div>
 
       {/* View All Squads Link */}
@@ -84,7 +121,7 @@ export const GuildTeam: React.FC = () => {
           to="/team"
           className="magnetic-btn btn-elastic inline-flex items-center gap-2 bg-primary text-white hover:bg-brand-orange font-mono text-xs font-black uppercase px-8 py-4 border-2 border-primary brutal-shadow transition-all rounded"
         >
-          <span>VIEW ALL 14 BUILDERS &amp; 6 FUNCTIONAL TEAMS</span>
+          <span>VIEW ALL TEAM PROFILES &amp; 6 FUNCTIONAL TEAMS</span>
           <span className="text-sm">↗</span>
         </Link>
       </div>

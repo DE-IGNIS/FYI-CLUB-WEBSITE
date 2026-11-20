@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { TEAM_MEMBERS } from '../../data/clubData';
+import { mapPublishedTeamMember } from '../../data/team';
 import { Link } from 'react-router-dom';
 import { KineticMarqueeRibbon, TextScramble } from '../../components/animations';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -8,62 +8,25 @@ import { db } from '../../lib/firebaseClient';
 import type { TeamMember } from '../../types';
 
 const CLUB_TEAMS = [
-  {
-    name: "TECHNICAL TEAM",
-    focus: "Full-Stack Web, Systems Architecture, Embedded Microcontrollers & Robotics",
-    desc: "Writing high-speed network protocols, custom memory allocators, ESP32 firmware, and autonomous rovers. Built for real deployments, not dummy slide decks."
-  },
-  {
-    name: "DESIGN & CONTENT TEAM",
-    focus: "Brutalist Creative Direction, WebGL Fragment Shaders & Technical Writing",
-    desc: "Crafting bold cyberpunk zine aesthetics, interactive canvas shaders, and translating complex distributed architectures into razor-sharp editorial prose."
-  },
-  {
-    name: "EVENT MANAGEMENT TEAM",
-    focus: "36-Hour Shipathons, Whitepaper Jams, Lab Logistics & Hardware Desks",
-    desc: "Producing fast-paced sleepless hackathons with zero PowerPoint presentations. Securing hardware workbench tools, oscilloscopes, and midnight supplies."
-  },
-  {
-    name: "PHOTOGRAPHY & MEDIA TEAM",
-    focus: "Visual Cinematography, Event Shutter, Analog Film Aesthetic & Reels",
-    desc: "Documenting the raw exhaustion and triumphant sparks of midnight builds. Producing high-energy visual reels and archival documentation of club history."
-  },
-  {
-    name: "PR & OUTREACH TEAM",
-    focus: "University Alliances, DSW Liaison, External Chapters & Hackathon Bounties",
-    desc: "Representing FYI guild across university departments, securing national competition grants, corporate hardware kits, and cloud compute sponsorships."
-  },
-  {
-    name: "SOCIAL MEDIA TEAM",
-    focus: "Instagram Viral Strategy, Developer Culture, Memetics & Discord Architecture",
-    desc: "Turning student terminal logs into viral developer culture. Managing official chapter broadcasts (@fyivitbhopal) and our 24/7 student discord hub."
-  }
+  { name: 'TECHNICAL TEAM', department: 'Technical Team' },
+  { name: 'DESIGN & CONTENT TEAM', department: 'Design & Content' },
+  { name: 'EVENT MANAGEMENT TEAM', department: 'Event Management' },
+  { name: 'PHOTOGRAPHY TEAM', department: 'Photography' },
+  { name: 'PR & OUTREACH TEAM', department: 'PR & Outreach' },
+  { name: 'SOCIAL MEDIA TEAM', department: 'Social Media' },
 ];
 
 export const TeamPage: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
-  const [members, setMembers] = useState<TeamMember[]>(TEAM_MEMBERS);
+  const [members, setMembers] = useState<TeamMember[]>([]);
 
   useEffect(() => {
     let active = true;
     getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true))).then((snapshot) => {
-      if (!active || snapshot.empty) return;
-      const live = snapshot.docs.map((entry) => {
-        const raw = entry.data();
-        const name = String(raw.name || '');
-        const position = (['President','Vice President','Secretary','Student Coordinator','Lead','Co-Lead','Core Member'].includes(raw.position) ? raw.position : 'Core Member') as TeamMember['position'];
-        return {
-          id: entry.id, name, initials: name.split(/\s+/).map((part: string) => part[0] || '').join('').slice(0,2).toUpperCase(),
-          department: raw.department as TeamMember['department'], displayGroup: String(raw.displayGroup || raw.department || ''), position,
-          roleTag: String(raw.position || '').toUpperCase(), roleBg: 'bg-brand-orange text-white', avatarBg: 'bg-brand-cyan', textColor: 'text-primary',
-          specialty: String(raw.specialty || ''), quote: String(raw.quote || ''), handle: String(raw.handle || ''),
-          socialLinks: raw.socialLinks || {},
-        } as TeamMember;
-      });
-      const liveNames = new Set(live.map((member) => member.name.trim().toLowerCase()));
-      const fallback = TEAM_MEMBERS.filter((member) => !liveNames.has(member.name.trim().toLowerCase()));
-      setMembers([...live, ...fallback]);
-    }).catch(() => { /* Keep the bundled roster available if Firestore is unavailable. */ });
+      if (active) setMembers(snapshot.docs
+        .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
+        .filter((member): member is TeamMember => member !== null));
+    }).catch(() => { if (active) setMembers([]); });
     return () => { active = false; };
   }, []);
 
@@ -113,7 +76,7 @@ export const TeamPage: React.FC = () => {
                   : 'bg-white text-primary hover:bg-brand-yellow'
               }`}
             >
-              {dept === 'ALL' ? 'ALL 14 BUILDERS' : dept}
+              {dept === 'ALL' ? 'ALL MEMBERS' : dept}
             </button>
           ))}
         </div>
@@ -199,11 +162,27 @@ export const TeamPage: React.FC = () => {
                       LI
                     </a>
                   )}
-                  <span className="text-brand-orange font-bold">↗</span>
+                  {member.socialLinks?.linkedin && (
+                    <a
+                      href={member.socialLinks.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-orange font-bold hover:text-brand-cyan"
+                      aria-label={`Explore ${member.name}'s LinkedIn profile`}
+                      title="Explore LinkedIn profile"
+                    >
+                      ↗
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
           ))}
+          {filteredMembers.length === 0 && (
+            <p className="sm:col-span-2 lg:col-span-4 border-2 border-primary bg-white p-6 text-center font-mono text-sm font-bold uppercase">
+              No approved team profiles yet.
+            </p>
+          )}
         </div>
       </section>
 
@@ -237,19 +216,12 @@ export const TeamPage: React.FC = () => {
                       SQUAD 0{idx + 1}
                     </span>
                     <span className="font-mono text-[10px] font-bold bg-brand-cyan text-primary px-2 py-0.5 border border-primary">
-                      ACTIVE SPRINT
+                      {members.filter((member) => member.department === team.department).length} MEMBERS
                     </span>
                   </div>
                   <h3 className="font-headline text-2xl font-black uppercase mb-2 text-primary">
                     {team.name}
                   </h3>
-                  <p className="font-body text-sm text-primary mb-4 leading-relaxed font-medium">
-                    {team.desc}
-                  </p>
-                </div>
-                <div className="bg-[#F6F3EB] p-3 border border-primary font-mono text-xs mt-4">
-                  <span className="text-[10px] text-brand-orange block font-bold uppercase">DOMAIN SCOPE:</span>
-                  <span className="font-bold text-primary">{team.focus}</span>
                 </div>
               </div>
             ))}
