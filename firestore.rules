@@ -8,6 +8,7 @@ service cloud.firestore {
     function isAdmin() {
       return signedIn()
         && request.auth.token.email is string
+        && request.auth.token.email_verified == true
         && exists(/databases/$(database)/documents/adminUsers/$(request.auth.token.email))
         && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role in ['owner', 'reviewer'];
     }
@@ -15,6 +16,7 @@ service cloud.firestore {
     function isOwner() {
       return signedIn()
         && request.auth.token.email is string
+        && request.auth.token.email_verified == true
         && exists(/databases/$(database)/documents/adminUsers/$(request.auth.token.email))
         && get(/databases/$(database)/documents/adminUsers/$(request.auth.token.email)).data.role == 'owner';
     }

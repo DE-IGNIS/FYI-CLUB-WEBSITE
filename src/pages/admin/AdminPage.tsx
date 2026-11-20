@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
+import {
+  onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
 import {
   collection,
   doc,
@@ -60,6 +68,9 @@ export const AdminPage: React.FC = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'owner' | 'reviewer'>('reviewer');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [showHistory, setShowHistory] = useState(false);
@@ -79,14 +90,22 @@ export const AdminPage: React.FC = () => {
       const adminRecord = await getDoc(doc(db, 'adminUsers', emailKey));
       const isAdmin = adminRecord.exists() && ['owner', 'reviewer'].includes(adminRecord.data().role);
       setIsOwner(adminRecord.exists() && adminRecord.data().role === 'owner');
-      setAccess(isAdmin ? 'allowed' : 'denied');
       if (isAdmin) {
+        const isPasswordAccount = currentUser.providerData.some((provider) => provider.providerId === 'password');
+        if (isPasswordAccount && !currentUser.emailVerified) {
+          await sendEmailVerification(currentUser);
+          setMessage('Verify your email using the link we just sent. Then return here and sign in again.');
+          await signOut(auth);
+          return;
+        }
+        setAccess('allowed');
         sessionStartedAt.current = Date.now();
         void addDoc(collection(db, 'auditLogs'), {
           action: 'admin_signed_in', actorUid: currentUser.uid, actorEmail: currentUser.email || '',
           occurredAt: serverTimestamp(),
         }).catch(() => setMessage('Signed in, but the session start could not be added to the audit log.'));
       } else {
+        setAccess('denied');
         setMessage('This email is not registered in the admin allowlist. Ask an owner to add it, then sign in again.');
         await signOut(auth);
       }
@@ -116,6 +135,32 @@ export const AdminPage: React.FC = () => {
   }, [access, isOwner]);
 
   const pending = useMemo(() => submissions.filter((item) => item.status === 'pending'), [submissions]);
+
+  const handleEmailSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setMessage('');
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail.trim().toLowerCase(), loginPassword);
+      setLoginPassword('');
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      setMessage(code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found'
+        ? 'Email or password is incorrect.'
+        : 'Email/password sign in failed. Check the address and try again.');
+    }
+  };
+
+  const handlePasswordReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setMessage('');
+    try {
+      await sendPasswordResetEmail(auth, loginEmail.trim().toLowerCase());
+      setMessage('If an account exists for that email, Firebase has sent a password reset link. Check your inbox and spam folder.');
+      setForgotPassword(false);
+    } catch {
+      setMessage('Could not send the reset email. Check the address and Firebase email templates/settings.');
+    }
+  };
 
   const handleSignOut = async () => {
     if (user && sessionStartedAt.current) {
@@ -250,9 +295,27 @@ export const AdminPage: React.FC = () => {
 
         {access === 'checking' && <p role="status">Checking administrator access…</p>}
         {access === 'signed-out' && <section className={panel}>
-          <h2 className="text-xl font-black uppercase">Admin sign in</h2>
-          <p className="my-4 text-sm">Only Google accounts already listed by an owner in Firebase can open this console.</p>
-          <button onClick={() => void signInWithPopup(auth, googleProvider).catch(() => setMessage('Google sign in failed. Check that Google sign-in is enabled in Firebase Authentication.'))} className="bg-[#FF4800] text-white border-2 border-[#111111] px-5 py-3 font-bold uppercase">Sign in with Google</button>
+          <div className="mx-auto max-w-md">
+            <p className="text-center text-xs uppercase tracking-widest text-[#FF4800] font-bold">FYI CLUB · PRIVATE ADMIN</p>
+            <h2 className="mt-2 text-center text-2xl font-black uppercase">{forgotPassword ? 'Reset password' : 'Sign in'}</h2>
+            <p className="my-4 text-center text-sm text-[#6E6C65]">Admin access is limited to VIT Bhopal emails added by an owner.</p>
+            {forgotPassword ? <form onSubmit={(event) => void handlePasswordReset(event)} className="space-y-3">
+              <label className={label} htmlFor="admin-email-reset">VIT Bhopal email</label>
+              <input id="admin-email-reset" type="email" required autoComplete="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="name@vitbhopal.ac.in" className="w-full border-2 border-[#111111] px-3 py-3 text-sm" />
+              <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Send reset link</button>
+              <button type="button" onClick={() => setForgotPassword(false)} className="w-full py-2 text-xs font-bold uppercase underline">Back to sign in</button>
+            </form> : <>
+              <form onSubmit={(event) => void handleEmailSignIn(event)} className="space-y-3">
+                <div><label className={label} htmlFor="admin-email">Email</label><input id="admin-email" type="email" required autoComplete="username" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} placeholder="name@vitbhopal.ac.in" className="mt-1 w-full border-2 border-[#111111] px-3 py-3 text-sm" /></div>
+                <div><label className={label} htmlFor="admin-password">Password</label><input id="admin-password" type="password" required autoComplete="current-password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} className="mt-1 w-full border-2 border-[#111111] px-3 py-3 text-sm" /></div>
+                <div className="text-right"><button type="button" onClick={() => setForgotPassword(true)} className="text-xs font-bold underline">Forgot password?</button></div>
+                <button className="w-full bg-[#111111] px-4 py-3 text-xs font-bold uppercase text-white">Sign in with email</button>
+              </form>
+              <div className="my-4 flex items-center gap-3 text-[10px] font-bold uppercase text-[#6E6C65]"><span className="h-px flex-1 bg-[#111111]/20" />or<span className="h-px flex-1 bg-[#111111]/20" /></div>
+              <button onClick={() => void signInWithPopup(auth, googleProvider).catch(() => setMessage('Google sign in failed. Check that Google sign-in is enabled in Firebase Authentication.'))} className="w-full border-2 border-[#111111] bg-white px-5 py-3 text-xs font-bold uppercase">Continue with Google</button>
+              <p className="mt-4 text-center text-[10px] leading-relaxed text-[#6E6C65]">No public sign-up. An owner must add your VIT email first. Email/password accounts must verify their email before entering.</p>
+            </>}
+          </div>
         </section>}
         {access === 'denied' && <section className={panel}>
           <h2 className="font-black uppercase text-xl">Access denied</h2>

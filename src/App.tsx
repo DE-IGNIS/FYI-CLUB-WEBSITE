@@ -110,7 +110,7 @@ export function App() {
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [prefilledEvent, setPrefilledEvent] = useState<string | undefined>(undefined);
   const [soundOn, setSoundOn] = useState(isSoundEnabled);
-  const isAdminRoute = window.location.pathname === '/admin';
+  const isAdminRoute = /^\/admin(?:\/|$)/.test(window.location.pathname);
 
   const triggerLogoIntro = useCallback(() => {
     setIntroKey((prev) => prev + 1);
@@ -148,6 +148,22 @@ export function App() {
     const next = toggleSound();
     setSoundOn(next);
   };
+
+  // The private console has its own shell and authentication screen; skip the
+  // public site's intro, cursor, navigation, footer, join modal, and sound UI.
+  if (isAdminRoute) {
+    return (
+      <BrowserRouter>
+        <ErrorBoundary>
+          <RouteMetadata />
+          <Routes>
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="*" element={<AdminPage />} />
+          </Routes>
+        </ErrorBoundary>
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>

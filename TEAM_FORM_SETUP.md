@@ -41,13 +41,17 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 
 ## Provision the website admin
 
-1. Enable Google as a sign-in provider in Firebase Authentication and add the production domain to authorized domains.
+1. Enable both Google and Email/Password in Firebase Authentication and add the production domain to authorized domains.
 2. Run `initializeWebsiteAdminOwner` in the trusted Apps Script project. It registers `sumit.24bce11520@vitbhopal.ac.in` as the first owner.
 3. Open `/admin` on the deployed site and sign in with that Google account.
 
 Only accounts with `owner` or `reviewer` in `adminUsers` can read submissions, approve/reject them, or inspect audit history. Owners can add/remove VIT Bhopal emails from the allowlist in the Admin page. An unlisted account is denied and signed out.
 
+The admin page offers Google sign-in, Email/Password sign-in, a password-reset email, and email verification for password accounts. There is no public sign-up; an owner allowlists first. If an account needs Email/Password, a project owner must create it in Firebase Authentication (or link the password provider to its existing account). An owner adding an email to the allowlist does not itself create an Authentication user. Google accounts are verified by Google; unverified password accounts receive a verification link and cannot access admin data until verified.
+
 Firebase's built-in Google sign-in can still create an Auth user record when an unlisted person attempts sign-in; the website immediately denies access and signs them out. Preventing even that Auth record from being created requires Firebase Identity Platform blocking functions, which are not part of this Spark-plan setup.
+
+Firebase's native in-app multi-factor authentication requires upgrading Authentication to Identity Platform. This workflow stays on the no-billing plan, so it does not claim to enforce app-level MFA. For the owner using Google sign-in, enable 2-Step Verification on the Google account itself.
 
 ## Photo privacy and audit limits
 
