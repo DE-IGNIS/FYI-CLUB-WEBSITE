@@ -32,7 +32,7 @@ This workflow uses Firebase Authentication, Firestore, Apps Script, and Google D
 
 ## Form requirements
 
-- Collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents.
+- Set Google Forms to collect verified email addresses, limit to one response per account, and restrict access to the intended VIT Bhopal respondents. The automatically collected `@vitbhopal.ac.in` address is the trusted private email. If the form also asks for a VIT email as text, that duplicate answer does not control authentication or block a valid submission.
 - Required questions: full name; position; department/team for Lead, Co-Lead, and Core Member; profile photo; specialty (150 characters maximum); LinkedIn; and consent.
 - Optional questions: quote (250 characters maximum), public handle (30 characters maximum), Instagram, and GitHub.
 - President, Vice President, Secretary, and Student Coordinator skip the team question. Lead, Co-Lead, and Core Member choose a team.
