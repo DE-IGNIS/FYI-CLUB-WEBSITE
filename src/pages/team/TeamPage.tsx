@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { mapPublishedTeamMember } from '../../data/team';
+import { mapPublishedTeamMember, sortTeamMembers } from '../../data/team';
 import { Link } from 'react-router-dom';
 import { KineticMarqueeRibbon, TextScramble } from '../../components/animations';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -28,9 +28,9 @@ export const TeamPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true))).then((snapshot) => {
-      if (active) setMembers(snapshot.docs
+      if (active) setMembers(sortTeamMembers(snapshot.docs
         .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
-        .filter((member): member is TeamMember => member !== null));
+        .filter((member): member is TeamMember => member !== null)));
     }).catch(() => { if (active) setMembers([]); });
     return () => { active = false; };
   }, []);
@@ -88,7 +88,7 @@ export const TeamPage: React.FC = () => {
 
         {/* Members Grid with 3D Perspective Tilt & Tactical Stamps */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredMembers.map((member) => (
+          {sortTeamMembers(filteredMembers).map((member) => (
             <div
               key={member.id}
               data-tilt
@@ -106,7 +106,7 @@ export const TeamPage: React.FC = () => {
                 <span className={`font-headline text-5xl font-black ${member.textColor}`}>
                   {member.initials}
                 </span>
-                {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" draggable={false} onContextMenu={(event) => event.preventDefault()} onDragStart={(event) => event.preventDefault()} className="absolute inset-0 h-full w-full object-cover select-none" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
 
                 {/* Role Pill */}
                 <div

@@ -20,6 +20,20 @@ const POSITIONS: TeamMember['position'][] = [
   'Core Member',
 ];
 
+const POSITION_ORDER: TeamMember['position'][] = [
+  'President',
+  'Vice President',
+  'Student Coordinator',
+  'Secretary',
+  'Lead',
+  'Co-Lead',
+  'Core Member',
+];
+
+export function sortTeamMembers(members: TeamMember[]): TeamMember[] {
+  return [...members].sort((a, b) => POSITION_ORDER.indexOf(a.position) - POSITION_ORDER.indexOf(b.position));
+}
+
 export function getTeamPhotoUrl(photoUrl?: unknown, photoDriveId?: unknown): string | undefined {
   const url = typeof photoUrl === 'string' ? photoUrl.trim() : '';
   const driveId = typeof photoDriveId === 'string' ? photoDriveId.trim() : '';
