@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { mapPublishedTeamMember } from '../../../data/team';
+import { mapPublishedTeamMember, sortTeamMembers } from '../../../data/team';
 import { db } from '../../../lib/firebaseClient';
 import type { TeamMember } from '../../../types';
 import { Link } from 'react-router-dom';
@@ -14,9 +14,9 @@ export const GuildTeam: React.FC = () => {
     getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true)))
       .then((snapshot) => {
         if (!active) return;
-        const publishedMembers = snapshot.docs
+        const publishedMembers = sortTeamMembers(snapshot.docs
           .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
-          .filter((member): member is TeamMember => member !== null);
+          .filter((member): member is TeamMember => member !== null));
         setTeamCount(publishedMembers.length);
         setFeaturedMembers(publishedMembers.slice(0, 4));
       })
@@ -65,7 +65,7 @@ export const GuildTeam: React.FC = () => {
               <span className={`font-headline text-5xl font-black ${member.textColor}`}>
                 {member.initials}
               </span>
-              {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+              {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" draggable={false} onContextMenu={(event) => event.preventDefault()} onDragStart={(event) => event.preventDefault()} className="absolute inset-0 h-full w-full object-cover select-none" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
               <div
                 className={`absolute bottom-1.5 left-1.5 ${member.roleBg} font-mono text-[9px] font-black px-1.5 py-0.5 border border-primary`}
               >
