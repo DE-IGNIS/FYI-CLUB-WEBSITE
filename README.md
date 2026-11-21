@@ -35,7 +35,12 @@ Built with a bold **Two26Studio-inspired tactile neo-brutalist aesthetic**, the 
 
 ### Application security setup
 
-Set `VITE_RECAPTCHA_SITE_KEY` alongside the Firebase web app values in `.env`. Register the production domain (and any development domain) for that reCAPTCHA v3 key. Deploy the restrictive Firestore rules with `firebase deploy --only firestore:rules --config firebase.firestore.json --project fyiclubvitbpl`, then enable **App Check enforcement for Cloud Firestore** in Firebase Console. The rules permit validated creates in `applications` only and deny client reads, edits, and deletes. App Check enforcement is required to reject unverified public clients; keep it enabled after verifying submissions work.
+Set `VITE_RECAPTCHA_SITE_KEY` alongside the Firebase web app values in `.env` (and in GitHub Actions secrets for production deployments). App Check uses **Google Cloud Fraud Defense (reCAPTCHA Enterprise)** with `ReCaptchaEnterpriseProvider` to attest requests in both the Firestore client SDK (`src/lib/firebaseClient.ts`) and application REST submissions (`src/lib/firebase.ts`).
+
+1. **reCAPTCHA Enterprise Key**: Created in [Google Cloud reCAPTCHA Console](https://console.cloud.google.com/security/recaptcha) restricted to production domains (`fyiclubvitbpl.web.app`, `fyiclubvitbpl.firebaseapp.com`). Localhost is kept off the production key per security best practices.
+2. **Firebase App Check Registration**: The web app is registered under **App Check → Apps → Fraud Defense** with the Enterprise Site Key and a 24-hour Token TTL to stay well within the 10,000 monthly free tier.
+3. **Firestore Security Rules**: The rules permit validated creates in `applications` only and deny client reads, edits, and deletes.
+4. **App Check Enforcement**: Keep Cloud Firestore in monitoring mode for 24–48 hours until legitimate site traffic registers ~100% verified requests, then toggle **Enforce** in the Firebase Console to reject unverified requests.
 
 ### Automatic team profile publishing
 
