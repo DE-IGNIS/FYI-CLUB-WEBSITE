@@ -1,6 +1,6 @@
 import type { JoinApplication } from '../types';
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getToken, initializeAppCheck, ReCaptchaV3Provider, type AppCheck } from 'firebase/app-check';
+import { getToken } from 'firebase/app-check';
+import { appCheck } from './firebaseClient';
 
 /**
  * FYI Firebase Integration — uses Firestore REST API (no SDK import issues).
@@ -9,40 +9,22 @@ import { getToken, initializeAppCheck, ReCaptchaV3Provider, type AppCheck } from
 
 const PROJECT_ID = import.meta.env.VITE_FIREBASE_PROJECT_ID || '';
 const API_KEY = import.meta.env.VITE_FIREBASE_API_KEY || '';
-const APP_ID = import.meta.env.VITE_FIREBASE_APP_ID || '';
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
 
 // Firestore REST endpoint — works in any environment, no ESM issues
 const FIRESTORE_URL = PROJECT_ID && API_KEY
   ? `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/applications?key=${API_KEY}`
   : null;
 
-let appCheck: AppCheck | null = null;
-
 async function getAppCheckToken(): Promise<string | null> {
-  if (!API_KEY || !PROJECT_ID || !APP_ID || !RECAPTCHA_SITE_KEY) {
+  if (!appCheck) {
     return null;
   }
 
   try {
-    const app = getApps().length
-      ? getApp()
-      : initializeApp({
-          apiKey: API_KEY,
-          projectId: PROJECT_ID,
-          appId: APP_ID,
-          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-        });
-    appCheck ??= initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(RECAPTCHA_SITE_KEY),
-      isTokenAutoRefreshEnabled: true,
-    });
     const tokenResult = await getToken(appCheck, false);
     return tokenResult.token;
   } catch (err) {
-    console.warn('[FYI] AppCheck initialization skipped:', err);
+    console.warn('[FYI] AppCheck token retrieval skipped:', err);
     return null;
   }
 }
