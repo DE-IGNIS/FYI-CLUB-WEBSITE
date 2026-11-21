@@ -15,7 +15,7 @@ const DEFAULT_ITEMS = [
   'NO SLIDE DECKS ALLOWED',
   '100% STUDENT DRIVEN',
   'SOLDER SMOKE & BARE-METAL CODE',
-  'TWO26 STUDIO KINETIC LAB',
+  'FYI CHAPTER KINETIC LAB',
 ];
 
 export const KineticMarqueeRibbon: React.FC<KineticMarqueeRibbonProps> = ({

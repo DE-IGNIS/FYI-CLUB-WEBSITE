@@ -39,7 +39,7 @@ export const SelectedWorks: React.FC = () => {
           </Link>
         </div>
 
-        {/* Project Cards Stack with Two26 3D Perspective Tilt */}
+        {/* Project Cards Stack with 3D Perspective Tilt */}
         <div className="flex flex-col gap-10">
           {PROJECTS.map((proj) => (
             <article
@@ -48,7 +48,7 @@ export const SelectedWorks: React.FC = () => {
               data-tilt-max="5"
               className="bg-white border-2 border-primary brutal-shadow-lg p-6 sm:p-8 hover:-translate-y-1 transition-all duration-300 relative group cursor-pointer"
             >
-              {/* Two26 Tactical Corner Crosshairs */}
+              {/* Tactical Corner Crosshairs */}
               <div className="absolute top-2 left-2 font-mono text-[10px] text-primary/30 group-hover:text-primary transition-colors select-none">+</div>
               <div className="absolute top-2 right-2 font-mono text-[10px] text-primary/30 group-hover:text-primary transition-colors select-none">+</div>
               <div className="absolute bottom-2 left-2 font-mono text-[10px] text-primary/30 group-hover:text-primary transition-colors select-none">+</div>

@@ -41,7 +41,7 @@ export const ManifestoSection: React.FC = () => {
                   rule.cardBg || 'bg-white'
                 } p-5 border-2 border-primary brutal-shadow hover:-translate-y-1 transition-transform relative cursor-pointer group`}
               >
-                {/* Two26 Tactical Corner Crosshair */}
+                {/* Tactical Corner Crosshair */}
                 <div className="absolute top-1.5 right-2 font-mono text-[9px] text-primary/30 group-hover:text-primary transition-colors">+</div>
 
                 <span

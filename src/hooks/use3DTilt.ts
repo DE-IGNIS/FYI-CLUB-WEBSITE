@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 /**
- * Two26-style 3D perspective tilt hook.
+ * Interactive 3D perspective tilt hook.
  * Attaches to any element with the `data-tilt` attribute on fine pointer (desktop mouse).
  * Tilts realistically towards the mouse and adds dynamic specular highlight.
  */

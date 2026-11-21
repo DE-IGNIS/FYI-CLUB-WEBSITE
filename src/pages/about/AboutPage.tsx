@@ -120,7 +120,7 @@ export const AboutPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Two26-Style Animated Snaking Bulb Wire Roadmap & Timeline */}
+      {/* Animated Snaking Bulb Wire Roadmap & Timeline */}
       <BulbWireRoadmap />
     </div>
   );

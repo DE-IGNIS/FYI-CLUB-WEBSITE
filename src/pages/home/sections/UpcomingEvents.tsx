@@ -44,7 +44,7 @@ export const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ onClaimPass }) =
           </button>
         </div>
 
-        {/* 3 Ticket Columns with Two26 3D Perspective Tilt */}
+        {/* 3 Ticket Columns with 3D Perspective Tilt */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {EVENTS.map((event, idx) => (
             <div
