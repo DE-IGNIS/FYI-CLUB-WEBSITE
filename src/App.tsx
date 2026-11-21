@@ -129,7 +129,7 @@ function AppContent() {
   // Activate tactile magnetic pull physics on all .magnetic-btn elements
   useMagneticButtons();
 
-  // Activate Two26 3D perspective tilt on [data-tilt] cards
+  // Activate 3D perspective tilt on [data-tilt] cards
   use3DTilt();
 
   // Activate scroll-driven editorial unmasking on .reveal-on-scroll elements

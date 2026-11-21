@@ -86,7 +86,7 @@ export const TeamPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Members Grid with Two26-Style 3D Perspective Tilt & Tactical Stamps */}
+        {/* Members Grid with 3D Perspective Tilt & Tactical Stamps */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredMembers.map((member) => (
             <div

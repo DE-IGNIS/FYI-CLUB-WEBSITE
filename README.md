@@ -10,12 +10,12 @@
 
 **fyi.vitbhopal** is the official digital headquarters for the **Fraternity of Young Innovators (FYI)**, an engineering and technology chapter at **VIT Bhopal University**.
 
-Built with a bold **Two26Studio-inspired tactile neo-brutalist aesthetic**, the platform rejects cookie-cutter corporate templates in favor of rich animations, industrial circuit board textures, high-voltage glowing roadmap conduits, magnetic physics, and responsive sound design.
+Built with a bold **tactile neo-brutalist aesthetic**, the platform rejects cookie-cutter corporate templates in favor of rich animations, industrial circuit board textures, high-voltage glowing roadmap conduits, magnetic physics, and responsive sound design.
 
 ### Key Highlights
 - **100% Student-Driven Identity:** Showcases real hardware prototypes, systems crates, and creative WebGL builds.
 - **Theatrical Vector Assembly Intro:** A continuous SVG vector assembly intro powered by Framer physics that plays on page load with an immediate `[ESC / SKIP INTRO ↗]` bypass.
-- **Two26 Snaking Bulb Wire Roadmap:** An interactive, scroll-driven high-voltage conduit wire glowing in Electric Cyan (`#00E5FF`) and Vivid Orange (`#FF4800`) connecting milestone stations and tool cards.
+- **Snaking Bulb Wire Roadmap:** An interactive, scroll-driven high-voltage conduit wire glowing in Electric Cyan (`#00E5FF`) and Vivid Orange (`#FF4800`) connecting milestone stations and tool cards.
 - **Organized Squad Hierarchy:** Structured roster representing the Executive Council (President & Vice President) and the 6 functional wings (Technical, Design & Content, Event Management, Photography, PR & Outreach, and Social Media) with Leads and Co-Leads.
 - **Cloud Firestore applications:** Submissions require Firebase App Check and are never queued in browser storage.
 
@@ -108,7 +108,7 @@ FYI CLUB WEBISTE/
 │   │   ├── home/
 │   │   │   ├── sections/                 # Modular home page sections
 │   │   │   │   ├── HeroSection.tsx       # Monumental headline, live Bhopal IST clock & stickers
-│   │   │   │   ├── BulbWireRoadmap.tsx   # Two26 Electric Blue & Orange animated snaking conduit wire
+│   │   │   │   ├── BulbWireRoadmap.tsx   # Electric Blue & Orange animated snaking conduit wire
 │   │   │   │   ├── SelectedWorks.tsx     # Featured 3D perspective build cards
 │   │   │   │   ├── UpcomingEvents.tsx    # Perforated student ticket passes
 │   │   │   │   ├── GuildTeam.tsx         # Core leadership spotlight

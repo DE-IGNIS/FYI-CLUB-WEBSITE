@@ -51,9 +51,9 @@ export const BulbWireRoadmap: React.FC = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full py-20 bg-two26-blueprint border-b-4 border-primary overflow-hidden selection:bg-brand-yellow select-none"
+      className="relative w-full py-20 bg-blueprint-grid border-b-4 border-primary overflow-hidden selection:bg-brand-yellow select-none"
     >
-      {/* Corner Technical Registration Marks (+) Two26 Style */}
+      {/* Corner Technical Registration Marks (+) Tactical Style */}
       <span className="absolute top-4 left-4 font-mono text-xs font-bold text-primary/40">+ [REG.01]</span>
       <span className="absolute top-4 right-4 font-mono text-xs font-bold text-primary/40">[230V_AC] +</span>
       <span className="absolute bottom-4 left-4 font-mono text-xs font-bold text-primary/40">+ [GND_REF]</span>
@@ -83,7 +83,7 @@ export const BulbWireRoadmap: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8">
-        {/* Section Header with Two26 Brutalist Badges */}
+        {/* Section Header with Tactical Brutalist Badges */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
           <div>
             <div className="inline-flex items-center gap-2 bg-white border-2 border-primary px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider brutal-shadow-sm mb-4">
@@ -127,7 +127,7 @@ export const BulbWireRoadmap: React.FC = () => {
 
         {/* ─── The Snaking Bulb Wire Interactive Canvas ─── */}
         <div className="relative">
-          {/* Central High-Voltage Blue & Orange Conduit Wire (Desktop SVG) — Widened and Deeply Curved (Two26 style) */}
+          {/* Central High-Voltage Blue & Orange Conduit Wire (Desktop SVG) — Widened and Deeply Curved */}
           <div className="hidden lg:block absolute left-1/2 top-4 bottom-4 w-[240px] -translate-x-1/2 pointer-events-none z-10">
             <svg
               className="w-full h-full"

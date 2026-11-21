@@ -52,7 +52,7 @@ export const HeroSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Two26-Style Live Campus Telemetry Bar */}
+      {/* Live Campus Telemetry Bar */}
       <div className="inline-flex max-w-full flex-wrap items-center gap-2 bg-white border-2 border-primary brutal-shadow-sm px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider mb-5">
         <span className="w-2 h-2 rounded-full bg-brand-orange animate-pulse flex-shrink-0" />
         <span className="whitespace-nowrap">VIT BHOPAL [IST] — {bhopalTime || '12:00:00 PM'}</span>
@@ -151,7 +151,7 @@ export const HeroSection: React.FC = () => {
               m.highlight === 'yellow' ? 'bg-brand-yellow' : 'bg-white'
             } border-2 border-primary brutal-shadow-sm p-4 relative group cursor-pointer`}
           >
-            {/* Two26 Corner Crosshairs */}
+            {/* Corner Crosshairs */}
             <div className="absolute top-1 left-1.5 font-mono text-[9px] text-primary/40 select-none group-hover:text-primary transition-colors">+</div>
             <div className="absolute bottom-1 right-1.5 font-mono text-[9px] text-primary/40 select-none group-hover:text-primary transition-colors">+</div>
 
