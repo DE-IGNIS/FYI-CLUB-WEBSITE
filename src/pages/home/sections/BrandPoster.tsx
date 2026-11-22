@@ -14,7 +14,7 @@ export const BrandPoster: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-center justify-center relative select-none">
-          <h2 className="font-headline text-[54px] sm:text-[90px] md:text-[130px] lg:text-[150px] leading-[0.85] font-black uppercase tracking-tighter text-primary hover:text-brand-orange hover:scale-[1.02] transition-all duration-300 cursor-default">
+          <h2 className="font-headline text-[clamp(2rem,10.5vw,9.375rem)] leading-[0.85] font-black uppercase tracking-tighter text-primary hover:text-brand-orange transition-colors duration-300 cursor-default">
             CREATE.
           </h2>
 
@@ -25,7 +25,7 @@ export const BrandPoster: React.FC = () => {
             </span>
           </div>
 
-          <h2 className="font-headline text-[54px] sm:text-[90px] md:text-[130px] lg:text-[150px] leading-[0.85] font-black uppercase tracking-tighter text-primary hover:text-brand-cyan hover:scale-[1.02] transition-all duration-300 cursor-default">
+          <h2 className="font-headline text-[clamp(2rem,10.5vw,9.375rem)] leading-[0.85] font-black uppercase tracking-tighter text-primary hover:text-brand-cyan transition-colors duration-300 cursor-default">
             COLLABORATE.
           </h2>
 
@@ -35,7 +35,7 @@ export const BrandPoster: React.FC = () => {
             </span>
           </div>
 
-          <h2 className="font-headline text-[54px] sm:text-[90px] md:text-[130px] lg:text-[150px] leading-[0.85] font-black uppercase tracking-tighter text-primary hover:text-brand-yellow hover:scale-[1.02] transition-all duration-300 cursor-default">
+          <h2 className="font-headline text-[clamp(2rem,10.5vw,9.375rem)] leading-[0.85] font-black uppercase tracking-tighter text-primary hover:text-brand-yellow transition-colors duration-300 cursor-default">
             INVENT.
           </h2>
         </div>
