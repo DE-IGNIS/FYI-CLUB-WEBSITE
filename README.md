@@ -6,7 +6,7 @@
 
 ---
 
-## ⚡ 1. Overview & Vision
+##  1. Overview & Vision
 
 **fyi.vitbhopal** is the official digital headquarters for the **Fraternity of Young Innovators (FYI)**, an engineering and technology chapter at **VIT Bhopal University**.
 
@@ -21,7 +21,7 @@ Built with a bold **tactile neo-brutalist aesthetic**, the platform rejects cook
 
 ---
 
-## 🛠️ 2. Tech Stack
+##  2. Tech Stack
 
 | Layer | Technologies |
 | :--- | :--- |
@@ -59,7 +59,7 @@ For initial setup, run `setupTeamProfilePublishing()` once. New submissions publ
 
 ---
 
-## 📁 3. File & Directory Architecture
+##  3. File & Directory Architecture
 
 ```
 FYI CLUB WEBISTE/
@@ -147,32 +147,36 @@ FYI CLUB WEBISTE/
 
 ---
 
-## 👥 4. Organizational Squad Structure
+## 4. Organizational Squad Structure
 
-The Team page and homepage load member profiles only from the published Firestore `teamMembers` collection. They do not use a bundled sample roster. The six team names mirror the FYI Club's structure:
+The Team page and homepage load member profiles only from the published Firestore `teamMembers` collection. They do not use a bundled sample roster. The seven team names mirror the FYI Club's structure:
 
-```
                       [ EXECUTIVE COUNCIL ]
-                    President • Vice President
+                    President • Vice President • Secretary • Treasurer • Student Coordinator
                                │
-       ┌──────────────┬────────┼────────┬──────────────┐
-       │              │        │        │              │
+       ┌──────────────┬────────┼────────┬──────────────┬──────────────┐
+       │              │        │        │              │              │
 [ TECHNICAL ]  [ DESIGN & ] [ EVENT ] [ PHOTO & ] [ PR & ]   [ SOCIAL ]
     TEAM        CONTENT      MGMT       MEDIA     OUTREACH    MEDIA
  Lead / Co-Lead Lead / Co-Lead Lead/Co  Lead/Co   Lead/Co    Lead/Co
-```
 
 1. **Executive Council:** Chapter President & Vice President overseeing strategic guild roadmap and university liaison.
+
 2. **Technical Team:** Full-stack architecture, Rust crates, embedded systems, microcontrollers (ESP32/STM32), and autonomous rovers.
+
 3. **Design & Content Team:** Brutalist cyberpunk zine identity, WebGL shaders, UI/UX, and technical documentation.
+
 4. **Event Management Team:** 36-hour sprint logistics, whitepaper teardowns, hardware bench sourcing, and venue coordination.
+
 5. **Photography & Media Team:** Event documentation, cinematic storytelling, 35mm visual aesthetics, and high-energy video reels.
+
 6. **PR & Outreach Team:** University and DSW relations, industry sponsorships, national hackathon bounties, and inter-chapter partnerships.
+
 7. **Social Media Team:** Broadcast channels (@fyivitbhopal on Instagram), memetic developer culture, and student Discord community.
 
 ---
 
-## 🚀 5. Development & Build Workflow
+##  5. Development & Build Workflow
 
 ### Prerequisites
 - [Node.js](https://nodejs.org) (v18 or higher recommended)
@@ -208,7 +212,7 @@ Spins up a local HTTP server serving the compiled `dist/` bundle to verify produ
 
 ---
 
-## 🌐 6. Deployment Guide
+##  6. Deployment Guide
 
 ### Deploying to Firebase Hosting
 1. Ensure [Firebase CLI](https://firebase.google.com/docs/cli) is installed:
@@ -231,7 +235,10 @@ A GitHub Actions workflow is pre-configured at `.github/workflows/firebase-deplo
 
 ---
 
-## 📄 7. License
+## 7. License
 
-Built with pride by the student engineers and creative technologists of **FYI • VIT Bhopal University Chapter**.  
-All software and prototypes are open source by default.
+Built with pride by the student engineers and creative technologists of **FYI • VIT Bhopal University Chapter**.
+
+This project is open source and released under the **MIT License**, encouraging innovation, collaboration, and the freedom to use, modify, and distribute the software.
+
+See the [`LICENSE`](./LICENSE) file for full license terms.
