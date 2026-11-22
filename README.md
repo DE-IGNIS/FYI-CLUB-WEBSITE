@@ -16,7 +16,7 @@ Built with a bold **tactile neo-brutalist aesthetic**, the platform rejects cook
 - **100% Student-Driven Identity:** Showcases real hardware prototypes, systems crates, and creative WebGL builds.
 - **Theatrical Vector Assembly Intro:** A continuous SVG vector assembly intro powered by Framer physics that plays on page load with an immediate `[ESC / SKIP INTRO ↗]` bypass.
 - **Snaking Bulb Wire Roadmap:** An interactive, scroll-driven high-voltage conduit wire glowing in Electric Cyan (`#00E5FF`) and Vivid Orange (`#FF4800`) connecting milestone stations and tool cards.
-- **Organized Squad Hierarchy:** Structured roster representing the Executive Council (President & Vice President) and the 6 functional wings (Technical, Design & Content, Event Management, Photography, PR & Outreach, and Social Media) with Leads and Co-Leads.
+- **Organized Squad Hierarchy:** Structured roster representing the Executive Council (President, Vice President, Secretary, Treasurer, and Student Coordinator) and the 6 functional wings (Technical, Design & Content, Event Management, Photography, PR & Outreach, and Social Media) with Leads and Co-Leads.
 - **Cloud Firestore applications:** Submissions require Firebase App Check and are never queued in browser storage.
 
 ---
@@ -160,7 +160,7 @@ The Team page and homepage load member profiles only from the published Firestor
     TEAM        CONTENT      MGMT       MEDIA     OUTREACH    MEDIA
  Lead / Co-Lead Lead / Co-Lead Lead/Co  Lead/Co   Lead/Co    Lead/Co
 
-1. **Executive Council:** Chapter President & Vice President overseeing strategic guild roadmap and university liaison.
+1. **Executive Council:** Chapter President, Vice President, Secretary, Treasurer, and Student Coordinator overseeing the strategic guild roadmap and university liaison.
 
 2. **Technical Team:** Full-stack architecture, Rust crates, embedded systems, microcontrollers (ESP32/STM32), and autonomous rovers.
 

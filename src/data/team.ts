@@ -14,6 +14,7 @@ const POSITIONS: TeamMember['position'][] = [
   'President',
   'Vice President',
   'Secretary',
+  'Treasurer',
   'Student Coordinator',
   'Lead',
   'Co-Lead',
@@ -23,8 +24,9 @@ const POSITIONS: TeamMember['position'][] = [
 const POSITION_ORDER: TeamMember['position'][] = [
   'President',
   'Vice President',
-  'Student Coordinator',
   'Secretary',
+  'Treasurer',
+  'Student Coordinator',
   'Lead',
   'Co-Lead',
   'Core Member',
@@ -48,7 +50,8 @@ function getLinkedInUrl(value: unknown): string | undefined {
   if (!input) return undefined;
   try {
     const parsed = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`);
-    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : undefined;
+    const isLinkedInHost = parsed.hostname === 'linkedin.com' || parsed.hostname.endsWith('.linkedin.com');
+    return ['http:', 'https:'].includes(parsed.protocol) && isLinkedInHost ? parsed.toString() : undefined;
   } catch {
     return undefined;
   }

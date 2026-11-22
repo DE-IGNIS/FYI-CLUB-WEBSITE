@@ -56,7 +56,7 @@ const DEPARTMENT_OPTIONS: TeamMember['department'][] = [
   'Photography', 'PR & Outreach', 'Social Media',
 ];
 const POSITION_OPTIONS: TeamMember['position'][] = [
-  'President', 'Vice President', 'Secretary', 'Student Coordinator', 'Lead', 'Co-Lead', 'Core Member',
+  'President', 'Vice President', 'Secretary', 'Treasurer', 'Student Coordinator', 'Lead', 'Co-Lead', 'Core Member',
 ];
 
 const panel = 'border-2 border-[#111111] bg-white p-5 sm:p-6 shadow-[5px_5px_0_#111111]';

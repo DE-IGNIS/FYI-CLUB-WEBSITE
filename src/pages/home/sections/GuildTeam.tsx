@@ -42,7 +42,7 @@ export const GuildTeam: React.FC = () => {
           </h2>
         </div>
         <p className="font-mono text-xs sm:text-sm font-bold text-primary max-w-sm">
-          No corporate titles. President, Vice President &amp; 6 functional squads of student builders.
+          No corporate titles. Executive Council &amp; 6 functional squads of student builders.
         </p>
       </div>
 

@@ -14,7 +14,7 @@ function onTeamProfileSubmit(e) {
     const key = Object.keys(answers).find((candidate) => candidate.trim().toLowerCase().startsWith(label.toLowerCase()));
     return key ? answers[key] : '';
   };
-  const position = String(answer('Position') || '');
+  const position = String(answer('Position') || '').trim();
   const teamValue = answer('Department / Team');
   const team = Array.isArray(teamValue) ? String(teamValue[0] || '') : String(teamValue || '');
   const collectedEmail = (e.response && e.response.getRespondentEmail()) || answer('Email Address');
@@ -42,11 +42,11 @@ function onTeamProfileSubmit(e) {
   const quote = String(answer('Quote for your profile') || '').trim();
   const handle = String(answer('Public handle') || '').trim();
   const linkedin = String(answer('LinkedIn profile') || '').trim();
-  const isExecutive = ['President','Vice President','Secretary','Student Coordinator'].includes(position);
+  const isExecutive = ['President','Vice President','Secretary','Treasurer','Student Coordinator'].includes(position);
   const teamNames = {'Photography Team':'Photography','PR & Outreach Team':'PR & Outreach','Social Media Team':'Social Media','Design & Content Team':'Design & Content','Event Management Team':'Event Management'};
   const department = isExecutive ? 'Executive Council' : (teamNames[team] || team);
   const validDepartments = ['Executive Council','Technical Team','Design & Content','Event Management','Photography','PR & Outreach','Social Media'];
-  const validPositions = ['President','Vice President','Secretary','Student Coordinator','Lead','Co-Lead','Core Member'];
+  const validPositions = ['President','Vice President','Secretary','Treasurer','Student Coordinator','Lead','Co-Lead','Core Member'];
   if (!name || !validDepartments.includes(department) || !validPositions.includes(position)) {
     throw new Error('The response needs a full name, valid position, and valid team before it can be published.');
   }

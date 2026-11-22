@@ -50,7 +50,7 @@ export interface TeamMember {
     | 'Photography'
     | 'PR & Outreach'
     | 'Social Media';
-  position: 'President' | 'Vice President' | 'Secretary' | 'Student Coordinator' | 'Lead' | 'Co-Lead' | 'Core Member';
+  position: 'President' | 'Vice President' | 'Secretary' | 'Treasurer' | 'Student Coordinator' | 'Lead' | 'Co-Lead' | 'Core Member';
   roleTag: string;
   roleBg: string;
   avatarBg: string;

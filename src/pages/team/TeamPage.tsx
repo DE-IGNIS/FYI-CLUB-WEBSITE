@@ -57,7 +57,7 @@ export const TeamPage: React.FC = () => {
         tag="04 • ARCHITECTS &amp; INSTIGATORS"
         badge="100% STUDENT DRIVEN"
         title="OUR SQUADS &amp; LEADERSHIP"
-        subtitle="No corporate bureaucracy. President, Vice President, and 6 core functional teams leading software, hardware, creative craft, and campus operations."
+        subtitle="Meet the Executive Council and 6 core functional teams leading software, hardware, creative craft, and campus operations."
       />
 
       <KineticMarqueeRibbon
@@ -150,11 +150,12 @@ export const TeamPage: React.FC = () => {
                     <a
                       href={member.socialLinks.linkedin}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
+                      aria-label={`Open ${member.name}'s LinkedIn profile in a new tab`}
                       className="text-brand-orange font-bold hover:text-brand-cyan underline underline-offset-2"
                       title="LinkedIn"
                     >
-                      EXPLORE ↗
+                      LINKEDIN ↗
                     </a>
                   )}
                 </div>
