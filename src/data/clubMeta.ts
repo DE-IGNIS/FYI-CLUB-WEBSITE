@@ -5,7 +5,7 @@
 export const CURRENT_YEAR = new Date().getFullYear();
 export const CURRENT_COHORT = `COHORT ${CURRENT_YEAR}`;
 
-export const getCopyrightNotice = () => `© ${CURRENT_YEAR} FYI VIT BHOPAL.`;
+export const getCopyrightNotice = () => `© ${CURRENT_YEAR} FYI.VITBHOPAL.`;
 export const VIT_EMAIL_PLACEHOLDER = 'Enter your VIT Bhopal email';
 
 export const CLUB_META = {
