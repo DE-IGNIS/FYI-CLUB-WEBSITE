@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { CLUB_META, getCopyrightNotice } from '../../data/clubData';
-import logoUrl from '../../assets/fyi-logo.jpg';
+import logoUrl from '../../assets/fyi-logo.webp';
 
 // Shared footer links and social channels come from the central club metadata.
 export const Footer: React.FC = () => {

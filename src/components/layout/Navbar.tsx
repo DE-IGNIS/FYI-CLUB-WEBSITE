@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { CLUB_META } from '../../data/clubData';
-import logoUrl from '../../assets/fyi-logo.jpg';
+import logoUrl from '../../assets/fyi-logo.webp';
 
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
