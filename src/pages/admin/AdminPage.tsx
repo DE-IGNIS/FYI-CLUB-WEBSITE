@@ -422,7 +422,7 @@ export const AdminPage: React.FC = () => {
                   </form> : <div className="flex items-center gap-3">
                     <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-[#111111] bg-[#F6F3EB] flex items-center justify-center font-bold">
                       <span>{member.initials}</span>
-                      {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                      {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
                     </div>
                     <div className="min-w-0 flex-1"><strong className="block truncate uppercase">{member.name}</strong><p className="text-xs">{member.position} · {member.department}</p><p className="text-[10px] uppercase text-[#6E6C65]">Published</p></div>
                     <button type="button" onClick={() => startMemberEdit(member)} className="shrink-0 border border-[#111111] px-3 py-2 text-xs font-bold uppercase hover:bg-[#F6F3EB]">Edit</button>
