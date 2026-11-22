@@ -46,10 +46,15 @@ export const TeamPage: React.FC = () => {
     'Social Media'
   ];
 
-  // Show the full roster for ALL, otherwise filter to the selected department.
+  // Leads and Co-Leads also appear in the Executive Council view while staying in their squad.
   const filteredMembers = selectedDept === 'ALL'
     ? members
-    : members.filter((m) => m.department === selectedDept);
+    : members.filter((member) => selectedDept === 'Executive Council'
+      ? member.department === selectedDept
+        || member.displayGroup === selectedDept
+        || member.position === 'Lead'
+        || member.position === 'Co-Lead'
+      : member.department === selectedDept);
 
   return (
     <div className="w-full">
