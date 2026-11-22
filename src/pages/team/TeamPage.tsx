@@ -117,7 +117,7 @@ export const TeamPage: React.FC = () => {
                 <span className={`font-headline text-5xl font-black ${member.textColor}`}>
                   {member.initials}
                 </span>
-                {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" draggable={false} onContextMenu={(event) => event.preventDefault()} onDragStart={(event) => event.preventDefault()} className="absolute inset-0 h-full w-full object-cover select-none" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                {member.photoUrl && <img src={member.photoUrl} alt={member.name} loading="lazy" decoding="async" draggable={false} onContextMenu={(event) => event.preventDefault()} onDragStart={(event) => event.preventDefault()} className="absolute inset-0 h-full w-full object-cover select-none" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
 
                 {/* Role Pill */}
                 <div

@@ -41,7 +41,7 @@ export function getTeamPhotoUrl(photoUrl?: unknown, photoDriveId?: unknown): str
   const driveId = typeof photoDriveId === 'string' ? photoDriveId.trim() : '';
   const urlDriveId = url.match(/drive\.google\.com\/(?:file\/d\/|thumbnail\?id=|uc\?[^#]*id=)([^&/?]+)/i)?.[1];
   const id = driveId || urlDriveId;
-  if (id) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w800`;
+  if (id) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w480`;
   return url || undefined;
 }
 
