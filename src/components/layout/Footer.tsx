@@ -37,42 +37,42 @@ export const Footer: React.FC = () => {
             onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
             className="hover:text-brand-orange transition-colors"
           >
-            01 • Home
+            Home
           </Link>
           <Link
             to="/about"
             onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
             className="hover:text-brand-orange transition-colors"
           >
-            02 • About FYI
+            About
           </Link>
           <Link
             to="/projects"
             onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
             className="hover:text-brand-orange transition-colors"
           >
-            03 • Featured Builds
+            Projects
           </Link>
           <Link
             to="/events"
             onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
             className="hover:text-brand-orange transition-colors"
           >
-            04 • Gatherings
+            Events
           </Link>
           <Link
             to="/team"
             onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
             className="hover:text-brand-orange transition-colors"
           >
-            05 • Architects
+            Team
           </Link>
           <Link
             to="/gallery"
             onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
             className="hover:text-brand-orange transition-colors"
           >
-            06 • Lab Archive
+            Gallery
           </Link>
         </div>
 
