@@ -45,6 +45,37 @@ export function getTeamPhotoUrl(photoUrl?: unknown, photoDriveId?: unknown): str
   return url || undefined;
 }
 
+function getInstagramUsername(value: unknown): string | undefined {
+  let input = typeof value === 'string' ? value.trim() : '';
+  if (!input) return undefined;
+
+  if (/^https?:\/\//i.test(input) || /instagram\.com\//i.test(input)) {
+    try {
+      const parsed = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`);
+      if (!['instagram.com', 'www.instagram.com'].includes(parsed.hostname.toLowerCase())) return undefined;
+      input = parsed.pathname.split('/').filter(Boolean)[0] || '';
+    } catch {
+      return undefined;
+    }
+  }
+
+  const username = input.replace(/^@/, '');
+  return /^[A-Za-z0-9._]{1,30}$/.test(username) && !username.startsWith('.') && !username.endsWith('.')
+    ? username
+    : undefined;
+}
+
+export function getInstagramUrl(value: unknown): string | undefined {
+  const username = getInstagramUsername(value);
+  return username ? `https://www.instagram.com/${encodeURIComponent(username)}/` : undefined;
+}
+
+export function formatInstagramHandle(value: unknown): string {
+  const username = getInstagramUsername(value);
+  if (username) return `@${username}`;
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 function getLinkedInUrl(value: unknown): string | undefined {
   const input = typeof value === 'string' ? value.trim() : '';
   if (!input) return undefined;

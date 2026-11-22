@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
-import { mapPublishedTeamMember, sortTeamMembers } from '../../data/team';
+import { formatInstagramHandle, getInstagramUrl, mapPublishedTeamMember, sortTeamMembers } from '../../data/team';
 import { Link } from 'react-router-dom';
 import { KineticMarqueeRibbon, TextScramble } from '../../components/animations';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -144,7 +144,18 @@ export const TeamPage: React.FC = () => {
 
               {/* Footer Links */}
               <div className="mt-auto pt-3 border-t border-primary/20 flex items-center justify-between font-mono text-xs text-brand-muted">
-                <span className="font-bold text-primary">{member.handle}</span>
+                {getInstagramUrl(member.handle) ? (
+                  <a
+                    href={getInstagramUrl(member.handle)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open ${formatInstagramHandle(member.handle)} on Instagram in a new tab`}
+                    className="font-bold text-primary hover:text-brand-orange underline underline-offset-2"
+                    title="Open Instagram profile"
+                  >
+                    {formatInstagramHandle(member.handle)}
+                  </a>
+                ) : <span className="font-bold text-primary">{member.handle}</span>}
                 <div className="flex items-center gap-2">
                   {member.socialLinks?.linkedin && (
                     <a

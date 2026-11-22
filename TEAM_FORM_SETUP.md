@@ -7,7 +7,7 @@
 3. The website reads published `teamMembers` records and shows them on the homepage and Team page. No admin approval is part of this flow.
 4. The script also stores the private response in `teamSubmissions` and writes an audit entry. The linked Form response spreadsheet is the source of truth; a separate review queue is not used.
 
-The member document ID is derived from the verified email. A new response can create or update that email's own profile; it does not select another member's document. Since publication is automatic, **restrict the Google Form to current FYI members**. A VIT Bhopal email alone is the script's identity check, not proof of club membership. Form answers, LinkedIn links, and the photo become public on the website. Each submitted photo is shared as **Anyone with the link — Viewer**; the Drive folder stays private.
+The member document ID is derived from the verified email. A new response can create or update that email's own profile; it does not select another member's document. Since publication is automatic, **restrict the Google Form to current FYI members**. A VIT Bhopal email alone is the script's identity check, not proof of club membership. Form answers, Instagram handles, LinkedIn links, and the photo become public on the website. A valid Instagram handle is linked to that Instagram profile. Each submitted photo is shared as **Anyone with the link — Viewer**; the Drive folder stays private.
 
 ## One-time setup
 
@@ -60,7 +60,8 @@ The admin allowlist does not create Firebase Authentication accounts. If an admi
 - Required questions: Full name, Position, Department / Team when applicable, Profile photo, Specialty, and consent.
 - The file upload question title must start with `Profile photo`.
 - Keep position and team choices consistent with the allowed website teams: Technical Team, Design & Content, Event Management, Photography, PR & Outreach, and Social Media. Executive positions do not require a team choice.
-- Consent must clearly say submitted profile details, LinkedIn link, and photo are published immediately. Photos are shared by link.
+- The public handle question should collect an Instagram username (for example, `@username`).
+- Consent must clearly say submitted profile details, Instagram handle, LinkedIn link, and photo are published immediately. Photos are shared by link.
 
 ## Troubleshooting
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { mapPublishedTeamMember, sortTeamMembers } from '../../../data/team';
+import { formatInstagramHandle, getInstagramUrl, mapPublishedTeamMember, sortTeamMembers } from '../../../data/team';
 import { db } from '../../../lib/firebaseClient';
 import type { TeamMember } from '../../../types';
 import { Link } from 'react-router-dom';
@@ -93,7 +93,18 @@ export const GuildTeam: React.FC = () => {
             </div>
 
             <div className="mt-auto font-mono text-xs text-brand-muted flex items-center justify-between border-t border-primary/20 pt-2">
-              <span>{member.handle}</span>
+              {getInstagramUrl(member.handle) ? (
+                <a
+                  href={getInstagramUrl(member.handle)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open ${formatInstagramHandle(member.handle)} on Instagram in a new tab`}
+                  title="Open Instagram profile"
+                  className="hover:text-brand-orange underline underline-offset-2"
+                >
+                  {formatInstagramHandle(member.handle)}
+                </a>
+              ) : <span>{member.handle}</span>}
               {member.socialLinks?.linkedin && (
                 <a
                   href={member.socialLinks.linkedin}
