@@ -112,10 +112,9 @@ export const GuildTeam: React.FC = () => {
                   rel="noopener noreferrer"
                   aria-label={`Explore ${member.name}'s LinkedIn profile`}
                   title="Explore LinkedIn profile"
-                  className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-brand-orange hover:text-brand-cyan group-hover:translate-x-1 transition-transform"
+                  className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform"
                 >
-                  <span>EXPLORE LINKEDIN</span>
-                  <span className="material-symbols-outlined text-sm">arrow_outward</span>
+                  arrow_outward
                 </a>
               )}
             </div>
