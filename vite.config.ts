@@ -8,8 +8,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Keep the official logo at a stable path while hashing other built assets.
-        assetFileNames: (assetInfo) => assetInfo.name === 'fyi-logo.jpg'
-          ? 'fyi-logo.jpg'
+        assetFileNames: (assetInfo) => assetInfo.name === 'fyi-logo.webp'
+          ? 'fyi-logo.webp'
           : 'assets/[name]-[hash][extname]',
       },
     },

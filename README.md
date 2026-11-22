@@ -65,7 +65,7 @@ For initial setup, run `setupTeamProfilePublishing()` once. New submissions publ
 FYI CLUB WEBISTE/
 ├── src/
 │   ├── assets/                           # Bundled media and branding assets
-│   │   └── fyi-logo.jpg                  # Official FYI VIT Bhopal Chapter Logo
+│   │   └── fyi-logo.webp                 # Official FYI VIT Bhopal Chapter Logo
 │   ├── components/                       # Modular, reusable UI components
 │   │   ├── common/                       # Cross-page shared components
 │   │   │   ├── PageHeader.tsx            # Unified brutalist header banner for all subpages

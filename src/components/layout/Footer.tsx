@@ -79,7 +79,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center pt-8">
           {/* Logo & Note */}
           <div className="md:col-span-5 flex items-center gap-3.5">
-            <div className="w-14 h-14 bg-white border-2 border-primary brutal-shadow-sm rounded-lg flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white border-2 border-primary brutal-shadow-sm rounded-lg flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
               <img
                 src={logoUrl}
                 alt="FYI VIT Bhopal Official Logo"
@@ -89,12 +89,17 @@ export const Footer: React.FC = () => {
                 }}
               />
             </div>
-            <div className="flex flex-col">
-              <span className="font-mono text-xs font-black text-primary">
-                fyi<span className="text-brand-orange">.</span>vitbhopal
-              </span>
-              <span className="font-mono text-[11px] text-brand-muted font-bold">
-                Handmade by student engineers • VIT Bhopal Chapter
+            <div className="flex min-w-0 flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-xs sm:text-sm md:text-base font-black tracking-tight text-primary lowercase">
+                  fyi<span className="text-brand-orange">.</span>vitbhopal
+                </span>
+                <span className="hidden sm:inline-flex bg-brand-cyan text-primary border border-primary px-1.5 py-0.5 text-[9px] font-mono font-black leading-none uppercase tracking-wider">
+                  CHAPTER
+                </span>
+              </div>
+              <span className="hidden sm:block font-mono text-[9px] text-brand-muted tracking-wider uppercase mt-0.5">
+                student innovation guild
               </span>
             </div>
           </div>
