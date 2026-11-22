@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 export const GuildTeam: React.FC = () => {
   const [featuredMembers, setFeaturedMembers] = useState<TeamMember[]>([]);
   const [teamCount, setTeamCount] = useState(0);
+  const [isLoadingTeam, setIsLoadingTeam] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -19,18 +20,20 @@ export const GuildTeam: React.FC = () => {
           .filter((member): member is TeamMember => member !== null));
         setTeamCount(publishedMembers.length);
         setFeaturedMembers(publishedMembers.slice(0, 4));
+        setIsLoadingTeam(false);
       })
       .catch(() => {
         if (active) {
           setTeamCount(0);
           setFeaturedMembers([]);
+          setIsLoadingTeam(false);
         }
       });
     return () => { active = false; };
   }, []);
 
   return (
-    <section className="w-full max-w-7xl mx-auto px-4 md:px-8 py-20 border-b-2 border-primary reveal-on-scroll" id="guild">
+    <section className="w-full max-w-7xl mx-auto px-4 md:px-8 py-20 border-b-2 border-primary reveal-on-scroll" id="guild" data-page-images-loading={isLoadingTeam ? 'true' : 'false'}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b-2 border-primary gap-4">
         <div>

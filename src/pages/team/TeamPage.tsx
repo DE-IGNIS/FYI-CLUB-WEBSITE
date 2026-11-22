@@ -19,6 +19,7 @@ const CLUB_TEAMS = [
 export const TeamPage: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
   const selectSquad = (department: string) => {
     setSelectedDept(department);
@@ -27,11 +28,13 @@ export const TeamPage: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true))).then((snapshot) => {
+    void getDocs(query(collection(db, 'teamMembers'), where('isPublished', '==', true))).then((snapshot) => {
       if (active) setMembers(sortTeamMembers(snapshot.docs
         .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
         .filter((member): member is TeamMember => member !== null)));
-    }).catch(() => { if (active) setMembers([]); });
+    }).catch(() => { if (active) setMembers([]); }).finally(() => {
+      if (active) setIsLoadingMembers(false);
+    });
     return () => { active = false; };
   }, []);
 
@@ -57,7 +60,7 @@ export const TeamPage: React.FC = () => {
       : member.department === selectedDept);
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-page-images-loading={isLoadingMembers ? 'true' : 'false'}>
       <PageHeader
         tag="04 • ARCHITECTS &amp; INSTIGATORS"
         badge="100% STUDENT DRIVEN"
