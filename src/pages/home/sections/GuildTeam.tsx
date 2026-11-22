@@ -53,6 +53,12 @@ export const GuildTeam: React.FC = () => {
             key={member.id}
             data-tilt
             data-tilt-max="7"
+            data-cursor-text={member.socialLinks?.linkedin ? 'EXPLORE ↗' : 'PROFILE'}
+            onClick={(event) => {
+              const clickedControl = (event.target as HTMLElement).closest('a, button, input, select, textarea, [role="button"]');
+              if (clickedControl || !member.socialLinks?.linkedin) return;
+              window.location.assign(member.socialLinks.linkedin);
+            }}
             className="bg-white border-2 border-primary brutal-shadow p-5 flex flex-col group hover:-translate-y-1 transition-transform cursor-pointer relative"
           >
             {/* Tactical Corner Crosshair */}
