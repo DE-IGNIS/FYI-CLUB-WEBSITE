@@ -171,7 +171,7 @@ export const TeamPage: React.FC = () => {
                       className="text-brand-orange font-bold hover:text-brand-cyan underline underline-offset-2"
                       title="LinkedIn"
                     >
-                      LINKEDIN ↗
+                      EXPLORE LINKEDIN ↗
                     </a>
                   )}
                 </div>
