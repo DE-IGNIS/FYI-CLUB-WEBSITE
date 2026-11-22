@@ -20,7 +20,7 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 left-0 w-full z-50 bg-[#F6F3EB]/95 backdrop-blur-md border-b-2 border-primary transition-all">
       <div className="h-20 sm:h-22 max-w-7xl mx-auto px-3 sm:px-4 md:px-8 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand & Official Logo Lockup */}
-        <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3 md:gap-4 group select-none whitespace-nowrap flex-shrink-0">
+        <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:gap-4 group select-none whitespace-nowrap lg:flex-none">
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white border-2 border-primary brutal-shadow-sm rounded-lg flex items-center justify-center p-1.5 group-hover:-rotate-2 transition-transform duration-200 overflow-hidden flex-shrink-0">
             <img
               src={logoUrl}
@@ -30,7 +30,7 @@ export const Navbar: React.FC = () => {
           </div>
           <div className="flex min-w-0 flex-col justify-center">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono font-black text-xs sm:text-sm md:text-base tracking-tight text-primary lowercase">
+              <span className="truncate font-mono font-black text-xs sm:text-sm md:text-base tracking-tight text-primary lowercase">
                 fyi<span className="text-brand-orange">.</span>vitbhopal
               </span>
               <span className="hidden sm:inline-flex bg-brand-cyan text-primary border border-primary px-1.5 py-0.5 text-[9px] font-mono font-black leading-none uppercase tracking-wider">
@@ -63,7 +63,7 @@ export const Navbar: React.FC = () => {
         </nav>
 
         {/* Status & CTA */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="ml-auto flex shrink-0 items-center gap-3 lg:ml-0">
           <div className="hidden xl:inline-flex items-center gap-2 bg-white border-2 border-primary brutal-shadow-sm px-3 py-1.5 rounded-full">
             <span className="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse" />
             <span className="font-mono text-xs font-bold uppercase tracking-tight">
@@ -82,7 +82,7 @@ export const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden shrink-0 p-2 bg-white border-2 border-primary brutal-shadow-sm rounded text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange"
+            className="lg:hidden flex h-11 w-11 shrink-0 items-center justify-center rounded border-2 border-primary bg-white p-0 text-primary brutal-shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange"
             aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-site-navigation"
