@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, Component, type ReactNode } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, Component, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { IntroLoader } from './components/intro';
 import { CustomCursor } from './components/ui';
@@ -7,18 +7,16 @@ import { JoinModal } from './components/common';
 import { RouteMetadata } from './components/common/RouteMetadata';
 import { useMagneticButtons, use3DTilt, useScrollReveal } from './hooks';
 import { playClickSound, playSparkSound, toggleSound, isSoundEnabled } from './lib/sound';
-import { AdminPage } from './pages/admin/AdminPage';
+import HomePage from './pages/home/HomePage';
 
-// 7 Page Modules
-import {
-  HomePage,
-  AboutPage,
-  ProjectsPage,
-  EventsPage,
-  TeamPage,
-  GalleryPage,
-  JoinPage,
-} from './pages';
+// Keep the home page in the initial bundle and split secondary routes/admin on demand.
+const AboutPage = React.lazy(() => import('./pages/about/AboutPage').then(({ AboutPage }) => ({ default: AboutPage })));
+const ProjectsPage = React.lazy(() => import('./pages/projects/ProjectsPage').then(({ ProjectsPage }) => ({ default: ProjectsPage })));
+const EventsPage = React.lazy(() => import('./pages/events/EventsPage').then(({ EventsPage }) => ({ default: EventsPage })));
+const TeamPage = React.lazy(() => import('./pages/team/TeamPage').then(({ TeamPage }) => ({ default: TeamPage })));
+const GalleryPage = React.lazy(() => import('./pages/gallery/GalleryPage').then(({ GalleryPage }) => ({ default: GalleryPage })));
+const JoinPage = React.lazy(() => import('./pages/join/JoinPage').then(({ JoinPage }) => ({ default: JoinPage })));
+const AdminPage = React.lazy(() => import('./pages/admin/AdminPage').then(({ AdminPage }) => ({ default: AdminPage })));
 
 // ─── Error Boundary ────────────────────────────────────────────────────────
 class ErrorBoundary extends Component<
@@ -217,32 +215,34 @@ function AppContent() {
 
             {/* Modular 7-Page Routing Engine */}
             <main className="w-full flex-grow">
-              <Routes>
-                <Route path="/" element={<ErrorBoundary><HomePage onOpenJoin={handleOpenJoin} /></ErrorBoundary>} />
-                <Route path="/about" element={<ErrorBoundary><AboutPage /></ErrorBoundary>} />
-                <Route path="/projects" element={<ErrorBoundary><ProjectsPage /></ErrorBoundary>} />
-                <Route path="/events" element={<ErrorBoundary><EventsPage /></ErrorBoundary>} />
-                <Route path="/team" element={<ErrorBoundary><TeamPage /></ErrorBoundary>} />
-                <Route path="/gallery" element={<ErrorBoundary><GalleryPage /></ErrorBoundary>} />
-                <Route path="/join" element={<ErrorBoundary><JoinPage /></ErrorBoundary>} />
-                <Route path="/admin" element={<ErrorBoundary><AdminPage /></ErrorBoundary>} />
-                {/* 404 fallback */}
-                <Route
-                  path="*"
-                  element={
-                    <div className="min-h-[60vh] flex flex-col items-center justify-center font-mono text-center p-8">
-                      <div className="text-8xl font-black text-brand-orange mb-4">404</div>
-                      <p className="text-xl font-bold uppercase tracking-tight mb-6">PAGE NOT FOUND</p>
-                      <a
-                        href="/"
-                        className="bg-primary text-white px-6 py-3 font-black uppercase text-sm tracking-wider hover:bg-brand-orange transition-colors"
-                      >
-                        GO HOME ↗
-                      </a>
-                    </div>
-                  }
-                />
-              </Routes>
+              <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center font-mono text-xs uppercase tracking-widest text-[#6E6C65]">INITIALIZING MODULE...</div>}>
+                <Routes>
+                  <Route path="/" element={<ErrorBoundary><HomePage onOpenJoin={handleOpenJoin} /></ErrorBoundary>} />
+                  <Route path="/about" element={<ErrorBoundary><AboutPage /></ErrorBoundary>} />
+                  <Route path="/projects" element={<ErrorBoundary><ProjectsPage /></ErrorBoundary>} />
+                  <Route path="/events" element={<ErrorBoundary><EventsPage /></ErrorBoundary>} />
+                  <Route path="/team" element={<ErrorBoundary><TeamPage /></ErrorBoundary>} />
+                  <Route path="/gallery" element={<ErrorBoundary><GalleryPage /></ErrorBoundary>} />
+                  <Route path="/join" element={<ErrorBoundary><JoinPage /></ErrorBoundary>} />
+                  <Route path="/admin" element={<ErrorBoundary><AdminPage /></ErrorBoundary>} />
+                  {/* 404 fallback */}
+                  <Route
+                    path="*"
+                    element={
+                      <div className="min-h-[60vh] flex flex-col items-center justify-center font-mono text-center p-8">
+                        <div className="text-8xl font-black text-brand-orange mb-4">404</div>
+                        <p className="text-xl font-bold uppercase tracking-tight mb-6">PAGE NOT FOUND</p>
+                        <a
+                          href="/"
+                          className="bg-primary text-white px-6 py-3 font-black uppercase text-sm tracking-wider hover:bg-brand-orange transition-colors"
+                        >
+                          GO HOME ↗
+                        </a>
+                      </div>
+                    }
+                  />
+                </Routes>
+              </Suspense>
             </main>
 
             {/* Shared Terminal Footer */}

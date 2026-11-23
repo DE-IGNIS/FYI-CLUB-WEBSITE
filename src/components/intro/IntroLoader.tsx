@@ -94,74 +94,6 @@ function generateConstellation() {
 
 const CONSTELLATION = generateConstellation();
 
-type ImageLoadProgress = (
-  completed: number,
-  total: number,
-  waitingForData: boolean,
-  timedOut: boolean,
-  failed: number
-) => void;
-
-async function waitForPageImages(reportProgress: ImageLoadProgress, isCancelled: () => boolean): Promise<void> {
-  const deadline = Date.now() + 12000;
-
-  while (document.querySelector('[data-page-images-loading="true"]') && Date.now() < deadline && !isCancelled()) {
-    reportProgress(0, 0, true, false, 0);
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 150));
-  }
-
-  if (isCancelled()) return;
-  if (Date.now() >= deadline) {
-    reportProgress(0, 0, false, true, 0);
-    return;
-  }
-
-  const images = Array.from(document.images).filter((image) => Boolean(image.getAttribute('src') || image.currentSrc));
-  const total = images.length;
-  const settled = new Set(images.filter((image) => image.complete));
-  let failed = Array.from(settled).filter((image) => image.naturalWidth === 0).length;
-  reportProgress(settled.size, total, false, false, failed);
-
-  const pending = images.filter((image) => !image.complete);
-  if (!pending.length) return;
-
-  await new Promise<void>((resolve) => {
-    let finished = false;
-    let timeoutId = 0;
-    const handlers = new Map<HTMLImageElement, () => void>();
-    const remainingMs = Math.max(0, deadline - Date.now());
-
-    const finish = (timedOut: boolean) => {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeoutId);
-      handlers.forEach((handler, image) => {
-        image.removeEventListener('load', handler);
-        image.removeEventListener('error', handler);
-      });
-      reportProgress(settled.size, total, false, timedOut, failed);
-      resolve();
-    };
-
-    timeoutId = window.setTimeout(() => finish(true), remainingMs);
-
-    pending.forEach((image) => {
-      const settleImage = () => {
-        if (settled.has(image)) return;
-        settled.add(image);
-        if (image.naturalWidth === 0) failed += 1;
-        reportProgress(settled.size, total, false, false, failed);
-        if (settled.size === total) finish(false);
-      };
-      handlers.set(image, settleImage);
-      image.addEventListener('load', settleImage);
-      image.addEventListener('error', settleImage);
-      image.loading = 'eager';
-      if (image.complete) settleImage();
-    });
-  });
-}
-
 // ── The Framer Continuous Loading Component with Smooth Reveal ───────────
 export const IntroLoader: React.FC<IntroLoaderProps> = ({
   onComplete,
@@ -345,30 +277,11 @@ export const IntroLoader: React.FC<IntroLoaderProps> = ({
             { duration: 2800, iterations: Infinity, easing: 'ease-in-out' }
           );
         }
-        void waitForPageImages((completed, total, waitingForData, timedOut, failed) => {
-          if (cancelled) return;
-          const percent = waitingForData ? 0 : total === 0 ? 100 : Math.floor((completed / total) * 100);
-          if (counterRef.current) counterRef.current.textContent = String(percent).padStart(2, '0');
-          if (barRef.current) barRef.current.style.transform = `scaleX(${percent / 100})`;
-          if (phaseRef.current) {
-            phaseRef.current.textContent = timedOut
-              ? 'SHOWING AVAILABLE CONTENT'
-              : waitingForData
-              ? 'WAITING FOR TEAM DATA'
-              : completed < total
-              ? 'LOADING PAGE IMAGES'
-              : failed > 0
-              ? `${failed} IMAGES UNAVAILABLE`
-              : 'PAGE READY';
-          }
-        }, () => cancelled).then(() => {
-          if (cancelled) return;
-          // Briefly show the final image status before lifting the intro curtain.
-          completionPauseTimerRef.current = window.setTimeout(() => {
-            completionPauseTimerRef.current = null;
-            handleFinish();
-          }, 450);
-        });
+        // Keep the intro animation independent of below-the-fold image requests.
+        completionPauseTimerRef.current = window.setTimeout(() => {
+          completionPauseTimerRef.current = null;
+          handleFinish();
+        }, 450);
       }
     };
 
