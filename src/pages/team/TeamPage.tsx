@@ -19,7 +19,6 @@ const CLUB_TEAMS = [
 export const TeamPage: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
   const selectSquad = (department: string) => {
     setSelectedDept(department);
@@ -32,9 +31,7 @@ export const TeamPage: React.FC = () => {
       if (active) setMembers(sortTeamMembers(snapshot.docs
         .map((entry) => mapPublishedTeamMember(entry.id, entry.data()))
         .filter((member): member is TeamMember => member !== null)));
-    }).catch(() => { if (active) setMembers([]); }).finally(() => {
-      if (active) setIsLoadingMembers(false);
-    });
+    }).catch(() => { if (active) setMembers([]); });
     return () => { active = false; };
   }, []);
 
@@ -60,7 +57,7 @@ export const TeamPage: React.FC = () => {
       : member.department === selectedDept);
 
   return (
-    <div className="w-full" data-page-images-loading={isLoadingMembers ? 'true' : 'false'}>
+    <div className="w-full">
       <PageHeader
         tag="04 • ARCHITECTS &amp; INSTIGATORS"
         badge="100% STUDENT DRIVEN"
