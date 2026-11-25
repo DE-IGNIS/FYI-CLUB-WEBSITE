@@ -38,7 +38,8 @@ export const ProjectsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-brand-orange animate-pulse" />
             <span className="font-black uppercase text-primary">
-              [PREVIEW ARCHIVE • DUMMY CONTENT]
+              {/* [PREVIEW ARCHIVE • DUMMY CONTENT] */}
+              [Showcase your Build !]
             </span>
             <span className="text-brand-muted hidden sm:inline">
               — Sample project prototypes shown for layout simulation. Cohort 2026 builds are in development.
@@ -107,6 +108,7 @@ export const ProjectsPage: React.FC = () => {
 
                   {/* Specs */}
                   <div className="grid grid-cols-3 gap-2 py-3 px-4 bg-[#F6F3EB] border-2 border-primary brutal-shadow-sm mb-6">
+                  <div className="grid grid-cols-3 gap-2 py-3 px-4 bg-[#F6F3EB] border-2 border-primary brutal-shadow-sm mb-6">
                     {proj.specs.map((spec, sIdx) => (
                       <div key={sIdx}>
                         <span className="font-mono text-[10px] text-brand-muted uppercase block font-bold">
@@ -121,6 +123,7 @@ export const ProjectsPage: React.FC = () => {
                         </span>
                       </div>
                     ))}
+                  </div>
                   </div>
 
                   {/* Action buttons */}
